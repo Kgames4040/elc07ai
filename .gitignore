@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+extracted_zip/
+mingit/
+.env
+.vscode/

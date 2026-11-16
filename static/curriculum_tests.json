@@ -1,0 +1,287 @@
+[
+  {
+    "id": "v1-1",
+    "unit": "Vocabulary Unit 1",
+    "type": "multiple_choice",
+    "topic": "Academic Lexis & Collocations",
+    "question": "The new regulations will impose serious ________ on how universities admit international students.",
+    "options": [
+      "constraints",
+      "inclinations",
+      "interventions",
+      "superficialities"
+    ],
+    "correct": 0,
+    "explanation": "'Constraints' refers to limits or controls on what you can do (Vocabulary Practice Material 1, Task 2). Collocates strongly with 'impose serious constraints on'.",
+    "synonyms": "restrictions, limitations, boundaries",
+    "collocation": "impose constraints, financial constraints"
+  },
+  {
+    "id": "v1-2",
+    "unit": "Vocabulary Unit 1",
+    "type": "multiple_choice",
+    "topic": "Word Forms & Nominalization",
+    "question": "If I had to work 60 hours a week as you do, my ________ would be to look for another position immediately.",
+    "options": [
+      "interaction",
+      "inclination",
+      "identification",
+      "recommendation"
+    ],
+    "correct": 1,
+    "explanation": "'Inclination' is the noun form of 'incline', meaning a feeling or tendency to do something (Vocab Material 1, Task 2).",
+    "synonyms": "tendency, leaning, propensity",
+    "collocation": "natural inclination, have an inclination to"
+  },
+  {
+    "id": "v1-3",
+    "unit": "Vocabulary Unit 1",
+    "type": "multiple_choice",
+    "topic": "Academic Prepositions",
+    "question": "The university policy is designed to discourage students ________ submitting unverified AI generated assignments.",
+    "options": [
+      "to",
+      "against",
+      "from",
+      "with"
+    ],
+    "correct": 2,
+    "explanation": "The verb 'discourage' takes the preposition 'from' (discourage someone from doing something). (Vocab Material 1, Task 3)",
+    "synonyms": "prevent from, deter from",
+    "collocation": "discourage someone from V-ing"
+  },
+  {
+    "id": "v1-4",
+    "unit": "Vocabulary Unit 1",
+    "type": "multiple_choice",
+    "topic": "Academic Prepositions",
+    "question": "Even after several setbacks, the research fellow was capable ________ conducting complex statistical synthesis.",
+    "options": [
+      "for",
+      "about",
+      "with",
+      "of"
+    ],
+    "correct": 3,
+    "explanation": "The adjective 'capable' takes 'of' + noun / gerund: 'capable of conducting'. (Vocab Material 1, Task 3)",
+    "synonyms": "able to, competent in",
+    "collocation": "capable of + V-ing / noun"
+  },
+  {
+    "id": "g1-1",
+    "unit": "Grammar Review Unit 1",
+    "type": "multiple_choice",
+    "topic": "Narrative Tenses & Time Clauses",
+    "question": "While the survey team ________ the traffic data along Rumelifeneri road, a heavy snowstorm began.",
+    "options": [
+      "were collecting",
+      "have collected",
+      "had collected",
+      "collect"
+    ],
+    "correct": 0,
+    "explanation": "We use Past Continuous ('were collecting') for an ongoing background action interrupted by a shorter action in the Simple Past ('began'). (Grammar Review 1, Practice 1)",
+    "synonyms": "was/were + verb-ing with while",
+    "collocation": "while + past continuous, simple past"
+  },
+  {
+    "id": "g1-2",
+    "unit": "Grammar Review Unit 1",
+    "type": "gap_fill",
+    "topic": "Correlative Comparatives (The... the...)",
+    "question": "Rewrite using 'The... the...': 'As the weather gets colder, people consume more warm drinks.' -> 'The colder the weather gets, ________ warm drinks people consume.'",
+    "correct_answer": "the more",
+    "accepted_answers": [
+      "the more",
+      "the more of",
+      "more"
+    ],
+    "explanation": "Correlative comparative structure: The + comparative adjective/adverb, the + comparative: 'The colder ..., the more warm drinks...'. (Grammar Review 1, Practice 2)",
+    "synonyms": "The [comparative]..., the [comparative]...",
+    "collocation": "The more..., the better..."
+  },
+  {
+    "id": "g1-3",
+    "unit": "Grammar Review Unit 1",
+    "type": "gap_fill",
+    "topic": "Superlative Transformation",
+    "question": "Rewrite using superlative: 'No other student in INT 07 is as dedicated as Selin.' -> 'Selin is ________________ member in INT 07.'",
+    "correct_answer": "the most dedicated",
+    "accepted_answers": [
+      "the most dedicated",
+      "the most dedicated student",
+      "the most dedicated member"
+    ],
+    "explanation": "'As dedicated as' transforms into the superlative 'the most dedicated'. (Grammar Review 1, Practice 2)",
+    "synonyms": "most committed, foremost",
+    "collocation": "the most + multi-syllable adjective"
+  },
+  {
+    "id": "v2-1",
+    "unit": "Vocabulary Unit 2",
+    "type": "multiple_choice",
+    "topic": "Academic Synonym & Context",
+    "question": "Due to catastrophic droughts, the displaced population required ________ financial assistance to rebuild irrigation canals.",
+    "options": [
+      "substantial",
+      "superficial",
+      "negligible",
+      "reluctant"
+    ],
+    "correct": 0,
+    "explanation": "'Substantial' means large in size, value, or importance. In academic texts, substantial aid/evidence indicates critical scale. (Vocab Practice 2)",
+    "synonyms": "significant, considerable, extensive",
+    "collocation": "substantial aid, substantial evidence"
+  },
+  {
+    "id": "g2-1",
+    "unit": "Grammar Review Unit 2",
+    "type": "multiple_choice",
+    "topic": "Cause and Effect Connectors",
+    "question": "Urban traffic congestion intensified dramatically ________ the sudden shutdown of metro line maintenance.",
+    "options": [
+      "owing to",
+      "because",
+      "even though",
+      "consequently"
+    ],
+    "correct": 0,
+    "explanation": "'Owing to' is a prepositional connector followed by a noun phrase ('the sudden shutdown...'). 'Because' requires a full clause (subject + verb). (Grammar Review 2)",
+    "synonyms": "due to, on account of, as a result of",
+    "collocation": "owing to + noun phrase"
+  },
+  {
+    "id": "g3-1",
+    "unit": "Grammar Review Unit 3",
+    "type": "multiple_choice",
+    "topic": "Relative Clauses & Reduction",
+    "question": "The research paper, ________ was published in the Koç Academic Review, received international acclaim.",
+    "options": [
+      "which",
+      "that",
+      "whom",
+      "where"
+    ],
+    "correct": 0,
+    "explanation": "Non-defining relative clauses set off by commas must use 'which' (never 'that') to refer to things. (Grammar and Beyond 3, Unit 3 / Grammar Review 3)",
+    "synonyms": "non-restrictive relative clause",
+    "collocation": ", which [verb] ,"
+  },
+  {
+    "id": "v3-1",
+    "unit": "Vocabulary Unit 3",
+    "type": "multiple_choice",
+    "topic": "Collocations & Prepositions",
+    "question": "The psychology professor emphasized that human memory is prone ________ distortion over extended periods.",
+    "options": [
+      "to",
+      "for",
+      "with",
+      "in"
+    ],
+    "correct": 0,
+    "explanation": "The academic adjective 'prone' takes the preposition 'to' (prone to errors / prone to distortion). (Vocab Material 3)",
+    "synonyms": "susceptible to, vulnerable to",
+    "collocation": "prone to + noun / V-ing"
+  },
+  {
+    "id": "g4-1",
+    "unit": "Grammar Review Unit 4",
+    "type": "multiple_choice",
+    "topic": "Conditionals & Hypothesizing",
+    "question": "If the local government ________ invested in flood defenses earlier, the damages would not have been so extensive.",
+    "options": [
+      "had",
+      "has",
+      "would have",
+      "did"
+    ],
+    "correct": 0,
+    "explanation": "Third Conditional for past hypothetical events: If + past perfect (had invested), would have + past participle. (Grammar Review 4)",
+    "synonyms": "past unreal conditional",
+    "collocation": "If + had + V3, would have + V3"
+  },
+  {
+    "id": "g5-1",
+    "unit": "Grammar Review Unit 5",
+    "type": "multiple_choice",
+    "topic": "Passive Voice in Academic Writing",
+    "question": "Several groundbreaking methodologies ________ by the department over the past two semesters.",
+    "options": [
+      "have been developed",
+      "developed",
+      "are developing",
+      "were being developed"
+    ],
+    "correct": 0,
+    "explanation": "Present Perfect Passive: 'have been developed' denotes actions completed over a period up to the present with passive agency. (Grammar Review 5)",
+    "synonyms": "have been + past participle",
+    "collocation": "have been introduced / developed"
+  },
+  {
+    "id": "v4-1",
+    "unit": "Vocabulary Unit 4",
+    "type": "gap_fill",
+    "topic": "Academic Transformation (Nominalization)",
+    "question": "Base sentence: 'The committee will analyze the environmental impact data.' -> Target Paraphrase: 'The committee will conduct an in-depth ________ of the environmental impact data.'",
+    "correct_answer": "analysis",
+    "accepted_answers": [
+      "analysis",
+      "Analysis"
+    ],
+    "explanation": "The noun form of the verb 'analyze' is 'analysis'. Academic writing heavily favors nominalized forms with 'conduct an analysis'. (Vocab Material 4)",
+    "synonyms": "examination, evaluation, investigation",
+    "collocation": "conduct an analysis of"
+  },
+  {
+    "id": "r1-1",
+    "unit": "Reading Explorer 3 Unit 1",
+    "type": "multiple_choice",
+    "topic": "Reading Skills: Inferencing & Connectors",
+    "question": "In academic reading passages, when an author uses 'Conversely' at the beginning of a paragraph, what is their primary objective?",
+    "options": [
+      "To introduce an opposing perspective or contradictory finding",
+      "To reinforce the identical argument with a personal anecdote",
+      "To summarize the conclusion without further analysis",
+      "To list chronological historical events"
+    ],
+    "correct": 0,
+    "explanation": "'Conversely' is a formal discourse marker signaling a direct contrast or opposing perspective compared to the previous statement. (Pathways 3 RW Unit 1)",
+    "synonyms": "in contrast, on the other hand",
+    "collocation": "Conversely, [opposing claim]..."
+  },
+  {
+    "id": "sp-1",
+    "unit": "Speaking Task 1",
+    "type": "multiple_choice",
+    "topic": "Speaking Task Discourse Markers",
+    "question": "During a 2-minute speaking response when explaining why you chose a specific meal option, which phrase best introduces a secondary decisive factor?",
+    "options": [
+      "Furthermore, another crucial element was its nutritional balance.",
+      "So yeah, anyway, whatever.",
+      "Like, I guess I just ate it.",
+      "Because I said so."
+    ],
+    "correct": 0,
+    "explanation": "'Furthermore, another crucial element was...' demonstrates academic CEFR B2+ cohesion and explicit factor categorization required by Koç ELC speaking rubrics.",
+    "synonyms": "Moreover, in addition, additionally",
+    "collocation": "Furthermore, [reason]..."
+  },
+  {
+    "id": "sp-2",
+    "unit": "Speaking Task 2",
+    "type": "multiple_choice",
+    "topic": "Speaking Task: Nature vs Nurture",
+    "question": "When debating genetic traits versus upbringing in Speaking Task 2, which modal construction expresses cautious academic deduction?",
+    "options": [
+      "These character traits could largely be attributed to environmental factors.",
+      "He is 100% like that and nobody can change it.",
+      "I don't know, maybe genes or something.",
+      "Definitely nothing to do with parents."
+    ],
+    "correct": 0,
+    "explanation": "'Could largely be attributed to' uses hedging and academic passive attribution, earning top marks on the Lexical Resource and Grammar rubrics.",
+    "synonyms": "can be traced back to, is likely influenced by",
+    "collocation": "be attributed to"
+  }
+]

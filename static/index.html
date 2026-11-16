@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>Koç University ELC INT 07 - Midterm & Speaking AI Assistant</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container": "#1c1f2a",
+            "error-container": "#93000a",
+            "tertiary-fixed": "#e9ddff",
+            "surface-container-highest": "#313540",
+            "surface-tint": "#ffb3b3",
+            "tertiary-container": "#632ecd",
+            "on-background": "#dfe2f1",
+            "outline": "#a88989",
+            "on-tertiary-fixed": "#23005c",
+            "inverse-primary": "#b42537",
+            "secondary-container": "#03b5d3",
+            "tertiary-fixed-dim": "#d0bcff",
+            "on-secondary-fixed-variant": "#004e5c",
+            "on-tertiary": "#3c0091",
+            "on-primary-container": "#ffb7b7",
+            "primary-fixed": "#ffdad9",
+            "primary-fixed-dim": "#ffb3b3",
+            "on-secondary-fixed": "#001f26",
+            "outline-variant": "#594040",
+            "surface-container-high": "#262a35",
+            "primary-container": "#a6192e",
+            "on-error-container": "#ffdad6",
+            "surface-bright": "#353944",
+            "surface-variant": "#313540",
+            "error": "#ffb4ab",
+            "background": "#0f131d",
+            "secondary-fixed-dim": "#4cd7f6",
+            "on-secondary": "#003640",
+            "surface-dim": "#0f131d",
+            "on-secondary-container": "#00424e",
+            "primary": "#ffb3b3",
+            "surface": "#0f131d",
+            "on-tertiary-container": "#d3c0ff",
+            "on-error": "#690005",
+            "on-primary-fixed": "#400009",
+            "on-surface-variant": "#e1bebe",
+            "inverse-on-surface": "#2c303b",
+            "on-tertiary-fixed-variant": "#5516be",
+            "on-surface": "#dfe2f1",
+            "secondary-fixed": "#acedff",
+            "surface-container-lowest": "#0a0e18",
+            "surface-container-low": "#171b26",
+            "inverse-surface": "#dfe2f1",
+            "tertiary": "#d0bcff",
+            "on-primary": "#680015",
+            "on-primary-fixed-variant": "#920322",
+            "secondary": "#4cd7f6"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["Space Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Marked Markdown Parser & HTML2PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    @layer base {
+      html, body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #0f131d;
+        color: #dfe2f1;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+      body {
+        overscroll-behavior-y: none;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Custom Pulse Wave */
+    @keyframes audioWave {
+      0%, 100% { height: 8px; }
+      50% { height: 32px; }
+    }
+    .animate-wave-1 { animation: audioWave 0.8s ease-in-out infinite; }
+    .animate-wave-2 { animation: audioWave 1.1s ease-in-out infinite 0.2s; }
+    .animate-wave-3 { animation: audioWave 0.9s ease-in-out infinite 0.4s; }
+    .animate-wave-4 { animation: audioWave 1.3s ease-in-out infinite 0.1s; }
+    .animate-wave-5 { animation: audioWave 1.0s ease-in-out infinite 0.3s; }
+
+    /* Markdown prose styles inside AI bubble */
+    .prose-ai h1, .prose-ai h2, .prose-ai h3 {
+      font-weight: 700;
+      color: #dfe2f1;
+      margin-top: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .prose-ai p { margin-bottom: 0.5rem; line-height: 1.6; }
+    .prose-ai ul, .prose-ai ol { margin-left: 1.25rem; margin-bottom: 0.5rem; list-style-type: disc; }
+    .prose-ai li { margin-bottom: 0.25rem; }
+    .prose-ai strong { color: #ffb3b3; }
+    .prose-ai code {
+      background-color: rgba(0,0,0,0.3);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.35rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85em;
+    }
+
+    /* 3D Flashcard Flip Styles */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .flashcard-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+    .flashcard-front, .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 1.25rem;
+      top: 0;
+      left: 0;
+    }
+    .flashcard-back {
+      transform: rotateY(180deg);
+    }
+  </style>
+</head>
+<body class="bg-background min-h-screen relative flex flex-col selection:bg-primary-container selection:text-white">
+
+  <!-- Ambient Glow Effects -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary-container/20 blur-3xl"></div>
+    <div class="absolute top-1/2 -right-24 w-80 h-80 rounded-full bg-secondary-container/15 blur-3xl"></div>
+  </div>
+
+  <!-- FIXED TOP HEADER -->
+  <header class="fixed top-0 left-0 right-0 z-40 bg-surface-container-lowest/85 backdrop-blur-2xl border-b border-white/5 transition-all">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2 flex flex-col gap-2">
+      <!-- Top Row: Drawer Menu, Logo, Brand, Converter Button & PDF Export -->
+      <div class="flex items-center justify-between">
+        
+        <!-- Left: Hamburger Drawer Button & Logo -->
+        <div class="flex items-center gap-2.5">
+          <button id="openDrawerBtn" aria-label="Open History Menu" class="w-9 h-9 rounded-full flex items-center justify-center bg-surface-container-high/60 hover:bg-surface-container-highest text-on-surface active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-[20px]">menu</span>
+          </button>
+          
+          <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('midterm')">
+            <img src="/static/img/koc_int07_logo.jpg" alt="Koç University INT 07 Emblem" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary-container shadow-md"/>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-xs sm:text-sm tracking-tight text-on-surface">Koç University ELC</span>
+                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-primary-container/30 text-primary ring-1 ring-primary/30">INT 07</span>
+              </div>
+              <span class="text-[10px] text-on-surface-variant truncate max-w-[170px] sm:max-w-none">Academic AI Assistant</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Actions (Dosya Converter & Export PDF) -->
+        <div class="flex items-center gap-2">
+          <!-- CONVERTER BUTTON (Replaced theme toggle) -->
+          <button id="fileConverterBtn" onclick="openFileConverterModal()" title="Dosya Dönüştürücü / File Converter" class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full flex items-center gap-1.5 bg-surface-container-high/70 hover:bg-primary-container hover:text-white text-on-surface text-xs font-semibold shadow-sm active:scale-95 transition-all border border-white/10">
+            <span class="material-symbols-outlined text-[17px] text-primary">transform</span>
+            <span class="font-bold">Converter</span>
+          </button>
+
+          <!-- EXPORT BUTTON -->
+          <button id="exportPdfBtn" title="Export Study Guide PDF" class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full flex items-center gap-1.5 bg-surface-container-high/70 hover:bg-surface-container-highest text-on-surface text-xs font-semibold shadow-sm active:scale-95 transition-all border border-white/10">
+            <span class="material-symbols-outlined text-[17px] text-secondary">ios_share</span>
+            <span class="hidden sm:inline font-bold">Export PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (5 Interactive Modules) -->
+      <nav class="h-10 flex items-center justify-between p-1 bg-surface-container-lowest/90 rounded-xl ring-1 ring-white/5 overflow-x-auto no-scrollbar gap-1">
+        <button id="navTabMidterm" onclick="switchTab('midterm')" class="flex-1 min-w-[70px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-bold gap-1 bg-surface-container-high text-on-surface shadow-[0_2px_12px_rgba(166,25,46,0.35)] ring-1 ring-primary/40 whitespace-nowrap px-2">
+          <span class="material-symbols-outlined text-[15px] text-primary">edit_note</span>
+          <span>Midterm</span>
+        </button>
+
+        <button id="navTabSentence" onclick="switchTab('sentence')" class="flex-1 min-w-[75px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
+          <span class="material-symbols-outlined text-[15px] text-amber-400">auto_fix_high</span>
+          <span>Cümle Yükseltici</span>
+        </button>
+
+        <button id="navTabCards" onclick="switchTab('cards')" class="flex-1 min-w-[75px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
+          <span class="material-symbols-outlined text-[15px] text-emerald-400">style</span>
+          <span>Kelime Kartları</span>
+        </button>
+
+        <button id="navTabSpeaking" onclick="switchTab('speaking')" class="flex-1 min-w-[70px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
+          <span class="material-symbols-outlined text-[15px] text-secondary">mic</span>
+          <span>Speaking</span>
+        </button>
+
+        <button id="navTabTests" onclick="switchTab('tests')" class="flex-1 min-w-[65px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
+          <span class="material-symbols-outlined text-[15px] text-tertiary">quiz</span>
+          <span>AI Quiz</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== SIDEBAR / DRAWER ==================== -->
+  <div id="drawerOverlay" class="fixed inset-0 bg-background/80 backdrop-blur-md z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  
+  <aside id="chatDrawer" class="fixed top-0 bottom-0 left-0 w-[84%] max-w-[340px] z-50 bg-surface-container-low/95 backdrop-blur-2xl shadow-2xl flex flex-col transform -translate-x-full transition-transform duration-300 ease-out border-r border-white/5">
+    <!-- Drawer Header -->
+    <div class="p-4 flex flex-col gap-3 bg-surface-container/70 border-b border-white/5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img src="/static/img/koc_int07_logo.jpg" alt="Logo" class="w-7 h-7 rounded-full object-cover"/>
+          <div>
+            <h2 class="font-bold text-sm text-on-surface leading-tight">ELC 07 Study Hub</h2>
+            <p class="text-[10px] text-secondary uppercase font-bold tracking-wider">Fall 2026 Curriculum</p>
+          </div>
+        </div>
+        <button id="closeDrawerBtn" class="w-8 h-8 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-all">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+
+      <!-- New Chat Button -->
+      <button id="newChatBtn" class="w-full rounded-xl bg-gradient-to-r from-primary-container via-inverse-primary to-primary-container p-2.5 text-white shadow-lg flex items-center justify-between active:scale-95 transition-all">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+          </div>
+          <span class="text-xs font-bold">New Study Chat</span>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 rounded bg-black/30 font-mono">⌘N</span>
+      </button>
+
+      <!-- Search in History -->
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-lowest/80 ring-1 ring-white/5">
+        <span class="material-symbols-outlined text-[16px] text-on-surface-variant">search</span>
+        <input id="searchHistoryInput" type="text" placeholder="Search past topics..." class="bg-transparent text-xs text-on-surface placeholder:text-on-surface-variant/50 outline-none w-full"/>
+      </div>
+    </div>
+
+    <!-- History List -->
+    <div id="drawerHistoryList" class="flex-1 overflow-y-auto p-3 space-y-2">
+      <!-- Dynamically filled by app.js -->
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="p-3 bg-surface-container/90 border-t border-white/5 flex flex-col gap-2">
+      <div class="flex items-center justify-between text-[11px] text-on-surface-variant px-1">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>610 Vocab & SBS Active</span>
+        </span>
+        <button id="clearAllHistoryBtn" class="hover:text-error transition-colors flex items-center gap-0.5">
+          <span class="material-symbols-outlined text-[13px]">delete_sweep</span>
+          <span>Clear All</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <main class="flex-1 pt-28 pb-32 max-w-4xl w-full mx-auto px-3 sm:px-4 z-10 flex flex-col">
+
+    <!-- ==================== TAB 1: MIDTERM PREP ==================== -->
+    <div id="tabContentMidterm" class="flex flex-col space-y-4">
+      
+      <!-- Countdown Banner & Focus Badge -->
+      <div class="relative overflow-hidden rounded-2xl bg-surface-container-high/60 backdrop-blur-xl p-3.5 shadow-md border border-white/5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-container/30 text-primary">
+              <span class="material-symbols-outlined text-[20px]">calendar_clock</span>
+            </span>
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-sm text-on-surface">ELC Intermediate Midterm Prep</span>
+                <span class="px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary text-[11px] font-mono font-bold">CEFR B2+</span>
+              </div>
+              <p class="text-xs text-on-surface-variant">Cause-Effect Architecture • Academic Vocab (610 Words) • Grammar Reviews</p>
+            </div>
+          </div>
+          <span class="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/80 text-primary text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+            <span>Active Sprint</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Focus Chips (Horizontal Scrollable) -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 -mx-3 px-3 sm:-mx-4 sm:px-4 no-scrollbar">
+        <button onclick="sendQuickPrompt('Help me review Academic Vocabulary from Unit 1-5 with definitions, collocations, and practice sentences.')" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-container text-white shadow-sm text-xs font-semibold active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[15px]">menu_book</span>
+          <span>Academic Vocab (Units 1-5)</span>
+        </button>
+        <button onclick="sendQuickPrompt('Explain Cause & Effect Essay Architecture: how to write a strong thesis, topic sentences, and body paragraphs for Koç ELC.')" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high/80 text-on-surface hover:text-white text-xs font-semibold active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[15px]">draw</span>
+          <span>Cause & Effect Essay</span>
+        </button>
+        <button onclick="sendQuickPrompt('Give me a comprehensive guide and practice exercises on Signpost Words & Transitions (furthermore, conversely, owing to, consequently).')" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high/80 text-on-surface hover:text-white text-xs font-semibold active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[15px]">alt_route</span>
+          <span>Signpost Words</span>
+        </button>
+        <button onclick="sendQuickPrompt('Teach me Paraphrasing and Nominalization rules with examples directly from the Skill Building Set.')" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high/80 text-on-surface hover:text-white text-xs font-semibold active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[15px]">transform</span>
+          <span>Paraphrasing Practice</span>
+        </button>
+        <button onclick="sendQuickPrompt('Quiz me on Grammar Review Units 1-5: narrative tenses, comparatives (the... the...), conditionals, and passive voice.')" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high/80 text-on-surface hover:text-white text-xs font-semibold active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[15px]">spellcheck</span>
+          <span>Grammar Clinic</span>
+        </button>
+      </div>
+
+      <!-- Chat Stream Messages -->
+      <div id="chatStream" class="flex flex-col space-y-4 min-h-[320px]">
+        <!-- Dynamic chat messages inserted here -->
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: CÜMLE SEVİYE YÜKSELTİCİ ==================== -->
+    <div id="tabContentSentence" class="hidden flex-col space-y-4">
+      
+      <!-- Module Header Card -->
+      <div class="rounded-2xl bg-surface-container-high/60 backdrop-blur-xl p-4 shadow-md border border-white/5 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[24px]">auto_fix_high</span>
+            </div>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-on-surface">✨ Cümle Seviye Yükseltici</h2>
+              <p class="text-xs text-on-surface-variant">Basit A2 cümlelerini ELC Intermediate B2+ sınav standartlarına dönüştürün.</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 text-xs font-mono font-bold">
+            B2+ Standard
+          </span>
+        </div>
+      </div>
+
+      <!-- Input Card -->
+      <div class="rounded-2xl bg-surface-container/80 backdrop-blur-2xl p-4 sm:p-5 shadow-xl border border-white/5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1.5">
+            Basit (A2) Cümlenizi Yazın:
+          </label>
+          <textarea id="sentenceInput" rows="3" placeholder="Örn: Many people use technology today because it is very useful for their work and education." class="w-full bg-surface-container-lowest p-3.5 rounded-xl border border-white/10 outline-none text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary/50 transition-all font-medium leading-relaxed"></textarea>
+        </div>
+
+        <!-- Focus Tags -->
+        <div class="space-y-1.5">
+          <span class="text-xs font-semibold text-on-surface-variant block">Odaklanmak İstediğiniz Alan:</span>
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="focusChipsContainer">
+            <button type="button" onclick="setSentenceFocus('Otomatik (Materyale Göre)')" class="sentence-focus-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all bg-primary-container text-white ring-1 ring-primary/40 shadow-sm">
+              Otomatik (Materyale Göre)
+            </button>
+            <button type="button" onclick="setSentenceFocus('Dilbilgisi Odaklı')" class="sentence-focus-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all bg-surface-container-high text-on-surface-variant hover:text-on-surface">
+              Dilbilgisi Odaklı (Clauses / Passive)
+            </button>
+            <button type="button" onclick="setSentenceFocus('Akademik Kelime')" class="sentence-focus-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all bg-surface-container-high text-on-surface-variant hover:text-on-surface">
+              Akademik Kelime (ELC Wordlist)
+            </button>
+            <button type="button" onclick="setSentenceFocus('Speaking Akıcılığı')" class="sentence-focus-chip shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all bg-surface-container-high text-on-surface-variant hover:text-on-surface">
+              Speaking Akıcılığı (Discourse Markers)
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex items-center justify-between pt-1">
+          <span class="text-[11px] text-on-surface-variant">Skill Building Set & Academic Wordlist referans alınır.</span>
+          <button id="upgradeSentenceBtn" onclick="handleSentenceUpgrade()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary-container via-inverse-primary to-primary-container text-white text-xs font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px]">bolt</span>
+            <span id="upgradeSentenceBtnText">Seviye Yükselt</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Result Cards Container (Hidden until response) -->
+      <div id="sentenceResultsSection" class="hidden flex-col space-y-4">
+        
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+            <span>Intermediate B2+ Alternatifleri</span>
+          </h3>
+          <span class="text-[11px] font-mono text-secondary">3 Versiyon Hazır</span>
+        </div>
+
+        <!-- 1. Grammar Card -->
+        <div class="rounded-2xl bg-surface-container/90 backdrop-blur-xl p-4 sm:p-5 border border-white/5 shadow-xl space-y-3 relative overflow-hidden">
+          <div class="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">1</span>
+              <div>
+                <span class="text-xs font-bold text-on-surface block">Dilbilgisi Odaklı Versiyon</span>
+                <span id="grammarPill" class="text-[10px] text-indigo-300 font-mono">Relative Clauses / Passive</span>
+              </div>
+            </div>
+            <button onclick="copyCardContent('grammarSentenceText', this)" class="px-2.5 py-1 rounded-lg bg-surface-container-highest/80 hover:bg-surface-bright text-on-surface text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[15px]">content_copy</span>
+              <span>Kopyala</span>
+            </button>
+          </div>
+
+          <p id="grammarSentenceText" class="text-xs sm:text-sm text-on-surface leading-relaxed font-medium">
+            <!-- Populated by JS -->
+          </p>
+
+          <div class="p-2.5 rounded-xl bg-surface-container-lowest/80 border border-white/5 flex items-start gap-2 text-xs">
+            <span class="material-symbols-outlined text-[16px] text-indigo-400 shrink-0 mt-0.5">help</span>
+            <p id="grammarExplanationText" class="text-on-surface-variant leading-relaxed">
+              <!-- Explanation -->
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. Academic Vocab Card -->
+        <div class="rounded-2xl bg-surface-container/90 backdrop-blur-xl p-4 sm:p-5 border border-white/5 shadow-xl space-y-3 relative overflow-hidden">
+          <div class="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">2</span>
+              <div>
+                <span class="text-xs font-bold text-on-surface block">Akademik Kelime Odaklı Versiyon</span>
+                <div id="vocabPills" class="flex flex-wrap gap-1 mt-0.5">
+                  <!-- Word pills -->
+                </div>
+              </div>
+            </div>
+            <button onclick="copyCardContent('vocabSentenceText', this)" class="px-2.5 py-1 rounded-lg bg-surface-container-highest/80 hover:bg-surface-bright text-on-surface text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[15px]">content_copy</span>
+              <span>Kopyala</span>
+            </button>
+          </div>
+
+          <p id="vocabSentenceText" class="text-xs sm:text-sm text-on-surface leading-relaxed font-medium">
+            <!-- Populated by JS -->
+          </p>
+
+          <div class="p-2.5 rounded-xl bg-surface-container-lowest/80 border border-white/5 flex items-start gap-2 text-xs">
+            <span class="material-symbols-outlined text-[16px] text-emerald-400 shrink-0 mt-0.5">help</span>
+            <p id="vocabExplanationText" class="text-on-surface-variant leading-relaxed">
+              <!-- Explanation -->
+            </p>
+          </div>
+        </div>
+
+        <!-- 3. Speaking Natural Card -->
+        <div class="rounded-2xl bg-surface-container/90 backdrop-blur-xl p-4 sm:p-5 border border-white/5 shadow-xl space-y-3 relative overflow-hidden">
+          <div class="flex items-center justify-between gap-2 border-b border-white/5 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-secondary-container/20 text-secondary flex items-center justify-center font-bold text-xs">3</span>
+              <div>
+                <span class="text-xs font-bold text-on-surface block">Speaking Sınavı İçin Doğal Versiyon</span>
+                <span id="speakingPill" class="text-[10px] text-secondary font-mono">Discourse Markers & Flow</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="speakSentenceText('speakingSentenceText')" class="p-1.5 rounded-lg bg-surface-container-highest/80 hover:bg-surface-bright text-secondary text-xs flex items-center justify-center active:scale-95 transition-all" title="Telaffuzu Dinle">
+                <span class="material-symbols-outlined text-[16px]">volume_up</span>
+              </button>
+              <button onclick="copyCardContent('speakingSentenceText', this)" class="px-2.5 py-1 rounded-lg bg-surface-container-highest/80 hover:bg-surface-bright text-on-surface text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-[15px]">content_copy</span>
+                <span>Kopyala</span>
+              </button>
+            </div>
+          </div>
+
+          <p id="speakingSentenceText" class="text-xs sm:text-sm text-on-surface leading-relaxed font-medium">
+            <!-- Populated by JS -->
+          </p>
+
+          <div class="p-2.5 rounded-xl bg-surface-container-lowest/80 border border-white/5 flex items-start gap-2 text-xs">
+            <span class="material-symbols-outlined text-[16px] text-secondary shrink-0 mt-0.5">help</span>
+            <p id="speakingExplanationText" class="text-on-surface-variant leading-relaxed">
+              <!-- Explanation -->
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: AKILLI KELİME KARTLARI ==================== -->
+    <div id="tabContentCards" class="hidden flex-col space-y-4">
+      
+      <!-- Module Controls Header -->
+      <div class="rounded-2xl bg-surface-container-high/60 backdrop-blur-xl p-4 shadow-md border border-white/5 space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[24px]">style</span>
+            </div>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-on-surface">🗂️ Akıllı Kelime Kartları</h2>
+              <p class="text-xs text-on-surface-variant">ELC Intermediate kelimeleri, türevleri ve edat kalıpları.</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button onclick="generateFlashcardsFromCurriculum()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md active:scale-95 transition-all flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">sync</span>
+              <span>Yüklü Materyalden Üret</span>
+            </button>
+            <button onclick="toggleCustomTextInput()" class="px-3 py-1.5 rounded-xl bg-surface-container-highest/80 hover:bg-surface-bright text-on-surface text-xs font-semibold active:scale-95 transition-all flex items-center gap-1">
+              <span class="material-symbols-outlined text-[16px]">edit_note</span>
+              <span>Özel Metin</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Unit Filter & Custom Text Panel (Collapsible) -->
+        <div id="customTextCardPanel" class="hidden flex-col gap-2 pt-2 border-t border-white/5">
+          <div class="flex items-center gap-2">
+            <select id="flashcardUnitSelect" class="bg-surface-container-lowest text-xs text-on-surface p-2 rounded-xl border border-white/10 outline-none flex-1">
+              <option value="">Tüm Üniteler (Karışık Sınav Havuzu)</option>
+              <option value="Unit 1">Unit 1: Society, Bonds & Perception</option>
+              <option value="Unit 2">Unit 2: Science, Crime & Identity</option>
+              <option value="Unit 3">Unit 3: Urban Life, Housing & Migration</option>
+              <option value="Unit 4">Unit 4: Extreme Nature & Disaster</option>
+              <option value="Unit 5">Unit 5: Business, Economy & Innovation</option>
+              <option value="Unit 6">Unit 6: Technology, Autonomy & Ethics</option>
+              <option value="Unit 7">Unit 7: Environment, Conservation & Resources</option>
+              <option value="Unit 8">Unit 8: Health, Medicine & Psychology</option>
+              <option value="Unit 9">Unit 9: History, Exploration & Culture</option>
+              <option value="Unit 10">Unit 10: Education & Society</option>
+            </select>
+          </div>
+          <textarea id="customFlashcardText" rows="2" placeholder="Veya buraya çalışmak istediğiniz bir okuma parçası veya kelime listesi yapıştırın..." class="w-full bg-surface-container-lowest p-2.5 rounded-xl border border-white/10 outline-none text-xs text-on-surface font-medium"></textarea>
+          <div class="flex justify-end">
+            <button onclick="generateFlashcardsFromCustomText()" class="px-4 py-1.5 rounded-xl bg-primary-container text-white text-xs font-bold active:scale-95 transition-all">
+              Metinden Kart Üret
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3D Flashcard Workspace -->
+      <div class="flex flex-col items-center space-y-4">
+        
+        <!-- Flashcard Wrapper with 3D perspective -->
+        <div class="w-full max-w-lg h-[340px] sm:h-[360px] perspective-1000 cursor-pointer select-none" onclick="flipFlashcard()">
+          <div id="flashcardInner" class="flashcard-inner">
+            
+            <!-- FRONT OF CARD -->
+            <div class="flashcard-front bg-surface-container/90 backdrop-blur-2xl border border-white/10 p-6 flex flex-col justify-between items-center shadow-2xl relative overflow-hidden">
+              <div class="absolute -top-16 -right-16 w-36 h-36 rounded-full bg-emerald-500/15 blur-2xl pointer-events-none"></div>
+
+              <!-- Top Row: Badge & Listen Button -->
+              <div class="w-full flex items-center justify-between">
+                <span id="cardPosBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                  Fiil
+                </span>
+                
+                <button type="button" onclick="event.stopPropagation(); speakCardWord()" class="w-9 h-9 rounded-full bg-surface-container-highest/70 hover:bg-emerald-500 hover:text-white text-emerald-400 flex items-center justify-center transition-all active:scale-90" title="Kelimeyi Dinle">
+                  <span class="material-symbols-outlined text-[19px]">volume_up</span>
+                </button>
+              </div>
+
+              <!-- Center: Large Headword -->
+              <div class="my-auto space-y-2">
+                <h2 id="cardHeadword" class="text-3xl sm:text-4xl font-extrabold text-on-surface tracking-tight">
+                  rely
+                </h2>
+                <p id="cardEnglishDef" class="text-xs text-on-surface-variant max-w-xs mx-auto line-clamp-2">
+                  To depend on with full trust or confidence
+                </p>
+              </div>
+
+              <!-- Bottom: Flip Prompt -->
+              <div class="w-full flex items-center justify-center gap-1.5 text-[11px] text-on-surface-variant/60 font-medium">
+                <span class="material-symbols-outlined text-[15px]">touch_app</span>
+                <span>Çevirmek için tıklayın veya [Boşluk] tuşuna basın</span>
+              </div>
+            </div>
+
+            <!-- BACK OF CARD -->
+            <div class="flashcard-back bg-surface-container-high/95 backdrop-blur-2xl border border-white/10 p-5 sm:p-6 flex flex-col justify-between text-left shadow-2xl relative overflow-y-auto no-scrollbar">
+              
+              <div class="space-y-3">
+                <!-- Turkish & English Meaning -->
+                <div class="flex items-start justify-between gap-2 border-b border-white/5 pb-2">
+                  <div>
+                    <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider block">Türkçe Karşılığı</span>
+                    <h3 id="cardTurkishMeaning" class="text-base sm:text-lg font-bold text-on-surface">Güvenmek, bel bağlamak</h3>
+                  </div>
+                  <button type="button" onclick="event.stopPropagation(); flipFlashcard()" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface">
+                    <span class="material-symbols-outlined text-[16px]">rotate_left</span>
+                  </button>
+                </div>
+
+                <!-- Collocations & Prepositions -->
+                <div class="space-y-1">
+                  <span class="text-[10px] uppercase font-bold text-secondary tracking-wider block">Birlikte Kullanıldığı Edatlar ve Kalıplar</span>
+                  <div id="cardCollocationsList" class="flex flex-wrap gap-1.5 text-xs text-on-surface font-semibold">
+                    <span class="px-2 py-0.5 rounded-md bg-surface-container-lowest border border-white/5">rely <strong>on</strong> sb/sth</span>
+                  </div>
+                </div>
+
+                <!-- Word Family -->
+                <div class="space-y-1">
+                  <span class="text-[10px] uppercase font-bold text-tertiary tracking-wider block">Kelime Ailesi (Word Family)</span>
+                  <div id="cardWordFamilyGrid" class="grid grid-cols-2 gap-1 text-[11px] text-on-surface-variant bg-surface-container-lowest/80 p-2 rounded-xl border border-white/5">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+
+                <!-- Example Sentence -->
+                <div class="space-y-1 pt-0.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] uppercase font-bold text-amber-400 tracking-wider">Örnek Sınav Cümlesi</span>
+                    <button type="button" onclick="event.stopPropagation(); speakCardExample()" class="text-[10px] text-amber-400 hover:underline flex items-center gap-0.5">
+                      <span class="material-symbols-outlined text-[13px]">volume_up</span>
+                      <span>Dinle</span>
+                    </button>
+                  </div>
+                  <p id="cardExampleSentence" class="text-xs text-on-surface italic leading-relaxed bg-surface-container-lowest/50 p-2 rounded-lg">
+                    University researchers heavily <strong>rely on</strong> accurate data.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Controls Bar under card -->
+        <div class="w-full max-w-lg flex flex-col gap-2.5">
+          <!-- Navigation & Action Buttons -->
+          <div class="flex items-center justify-between gap-2">
+            <button onclick="prevFlashcard()" class="flex-1 py-2 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs font-semibold active:scale-95 transition-all flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Önceki</span>
+            </button>
+
+            <!-- Card Counter Pill -->
+            <div class="px-3.5 py-1.5 rounded-xl bg-surface-container-lowest font-mono text-xs font-bold text-on-surface border border-white/5 shrink-0">
+              <span id="flashcardCounter">1 / 10</span>
+            </div>
+
+            <button onclick="nextFlashcard()" class="flex-1 py-2 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs font-semibold active:scale-95 transition-all flex items-center justify-center gap-1">
+              <span>Sonraki</span>
+              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </button>
+          </div>
+
+          <!-- Master Action: Learned vs Review -->
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="markCardLearned()" class="py-2.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600 text-emerald-200 hover:text-white border border-emerald-500/30 text-xs font-bold active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-sm">
+              <span class="material-symbols-outlined text-[17px]">task_alt</span>
+              <span>Öğrendim (Çıkar)</span>
+            </button>
+            <button onclick="flipFlashcard()" class="py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs font-bold active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-white/5">
+              <span class="material-symbols-outlined text-[17px]">cached</span>
+              <span>Kartı Çevir</span>
+            </button>
+          </div>
+
+          <!-- Shortcuts Legend -->
+          <div class="flex items-center justify-between text-[11px] text-on-surface-variant/70 px-1">
+            <span>Klavye: [Boşluk] Çevir • [← / →] Geçiş</span>
+            <span id="learnedCountLabel">Öğrenilen: 0</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: SPEAKING TASK ==================== -->
+    <div id="tabContentSpeaking" class="hidden flex-col space-y-4">
+      
+      <!-- Speaking Topic Selector & Criteria Banner -->
+      <div class="rounded-2xl bg-surface-container/70 backdrop-blur-2xl p-4 shadow-xl border border-white/5 space-y-3">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="speakingTaskBadge" class="text-[11px] font-bold bg-primary-container/30 text-primary px-2.5 py-1 rounded-full uppercase tracking-wider">
+              Task 1 • Official SBS Prompt
+            </span>
+            <span class="text-[11px] font-mono text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full">
+              2 Mins Limit
+            </span>
+          </div>
+          
+          <!-- Countdown Timer Pill -->
+          <div id="prepTimerPill" class="flex items-center gap-1.5 bg-primary-container/40 text-primary-fixed px-3 py-1 rounded-full shadow-inner shrink-0">
+            <span class="material-symbols-outlined text-[16px]">timer</span>
+            <span id="speakingTimerDisplay" class="font-mono text-xs font-bold">01:00</span>
+          </div>
+        </div>
+
+        <!-- Topic Dropdown Selector -->
+        <div class="space-y-1">
+          <label class="text-xs font-semibold text-on-surface-variant">Choose Speaking Topic / Prompt:</label>
+          <select id="speakingTopicSelect" onchange="changeSpeakingTopic()" class="w-full bg-surface-container-high/90 text-on-surface text-xs rounded-xl p-2.5 outline-none border border-white/10 font-medium">
+            <option value="1">Prompt 1: Restaurant Food & Consumer Decisions (Takeout, dine-in, deal valuation)</option>
+            <option value="2">Prompt 2: Personality Traits (Nature vs. Nurture, genetics vs background changes)</option>
+            <option value="3">Prompt 3: Relocation & Moving to a New Place (Advantages, disadvantages, settlement)</option>
+            <option value="4">Prompt 4: Natural Place / Geographical Feature (Description, impact, conservation)</option>
+            <option value="5">Prompt 5: Career Aspirations & Perfect Job (Duties, qualifications, ideal fit)</option>
+          </select>
+        </div>
+
+        <!-- Current Prompt Text Display -->
+        <div class="p-3 rounded-xl bg-surface-container-lowest/80 border border-white/5 space-y-1">
+          <h3 id="currentPromptTitle" class="text-sm font-bold text-on-surface">Restaurant Food & Consumer Decisions</h3>
+          <p id="currentPromptText" class="text-xs text-on-surface-variant leading-relaxed">
+            Think about the last time you bought food from a restaurant. What kind of food did you buy? Where did you buy it from? Did you eat in a restaurant, did you buy takeout food, or did you have food delivered? How did you choose which item(s) to order? What factors did you consider? Do you think you got a good deal? Why or why not?
+          </p>
+        </div>
+
+        <!-- Rubric Tags -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
+          <span class="text-[11px] font-semibold bg-surface-container-highest/60 text-on-surface px-2.5 py-1 rounded-lg shrink-0">🎯 CEFR B2+ Lexis</span>
+          <span class="text-[11px] font-semibold bg-surface-container-highest/60 text-on-surface px-2.5 py-1 rounded-lg shrink-0">🗣️ Discourse Flow</span>
+          <span class="text-[11px] font-semibold bg-surface-container-highest/60 text-on-surface px-2.5 py-1 rounded-lg shrink-0">🔗 Cohesive Devices</span>
+          <span class="text-[11px] font-semibold bg-surface-container-highest/60 text-on-surface px-2.5 py-1 rounded-lg shrink-0">⚖️ Grammatical Range</span>
+        </div>
+      </div>
+
+      <!-- Live Speech Stage & Audio Orb -->
+      <div class="rounded-2xl bg-surface-container-low/80 backdrop-blur-2xl p-6 shadow-2xl flex flex-col items-center text-center space-y-4 border border-white/5 relative">
+        <div class="text-xs text-on-surface-variant" id="speakingStatusLabel">
+          Press the microphone button to start your 2-minute speech practice.
+        </div>
+
+        <!-- Animated Waveform Bars (Active when recording) -->
+        <div id="audioWaveform" class="hidden items-center justify-center gap-1.5 h-10">
+          <span class="w-1.5 bg-primary rounded-full animate-wave-1"></span>
+          <span class="w-1.5 bg-secondary rounded-full animate-wave-2"></span>
+          <span class="w-1.5 bg-primary rounded-full animate-wave-3"></span>
+          <span class="w-1.5 bg-secondary rounded-full animate-wave-4"></span>
+          <span class="w-1.5 bg-primary rounded-full animate-wave-5"></span>
+        </div>
+
+        <!-- Primary Interactive Mic Orb -->
+        <div class="relative flex items-center justify-center my-2">
+          <span id="micOrbPulse1" class="absolute w-28 h-28 rounded-full bg-primary/20 transition-all opacity-0"></span>
+          <span id="micOrbPulse2" class="absolute w-24 h-24 rounded-full bg-primary-container/30 transition-all opacity-0"></span>
+          
+          <button id="speakingMicBtn" onclick="toggleSpeakingRecording()" class="relative z-10 w-20 h-20 rounded-full bg-gradient-to-tr from-primary-container via-[#8B0000] to-primary flex items-center justify-center shadow-[0_0_30px_rgba(166,25,46,0.6)] active:scale-95 transition-transform">
+            <span class="material-symbols-outlined text-[36px] text-white" id="speakingMicIcon">mic</span>
+          </button>
+        </div>
+
+        <!-- Live Neural Transcription Box -->
+        <div class="w-full text-left bg-surface-container/70 backdrop-blur-md rounded-xl p-3.5 shadow-inner space-y-1.5 border border-white/5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px] text-secondary">hearing</span>
+              <span class="text-[11px] font-bold text-secondary uppercase tracking-wider">Live Speech Transcription</span>
+            </div>
+            <span id="speakingWordCount" class="text-[10px] font-mono text-on-surface-variant">0 words</span>
+          </div>
+          <p id="speakingTranscriptBox" class="text-xs text-on-surface italic leading-relaxed min-h-[50px]">
+            Your spoken words will appear here in real time as you speak...
+          </p>
+        </div>
+
+        <!-- Controls: Timer buttons & Analyze -->
+        <div class="grid grid-cols-3 gap-2 w-full pt-1">
+          <button onclick="startPrepTimer()" class="flex flex-col items-center justify-center py-2.5 rounded-xl bg-surface-container-high/80 text-on-surface hover:bg-surface-bright active:scale-95 transition-all text-xs font-semibold">
+            <span class="material-symbols-outlined text-[18px] mb-0.5 text-primary">timer</span>
+            <span>1 Min Prep</span>
+          </button>
+          
+          <button id="analyzeSpeechBtn" onclick="analyzeSpokenSpeech()" class="flex flex-col items-center justify-center py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-[#8B0000] text-white shadow-[0_4px_16px_rgba(166,25,46,0.5)] active:scale-95 transition-all text-xs font-bold">
+            <span class="material-symbols-outlined text-[18px] mb-0.5">analytics</span>
+            <span>Analyze</span>
+          </button>
+
+          <button onclick="resetSpeakingSession()" class="flex flex-col items-center justify-center py-2.5 rounded-xl bg-surface-container-high/80 text-on-surface hover:bg-surface-bright active:scale-95 transition-all text-xs font-semibold">
+            <span class="material-symbols-outlined text-[18px] mb-0.5">restart_alt</span>
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Speaking Evaluation Result Card (Hidden until analyzed) -->
+      <div id="speakingResultSection" class="hidden rounded-2xl bg-surface-container/80 backdrop-blur-2xl p-4 shadow-xl border border-white/5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-primary-container/30 text-primary flex items-center justify-center">
+              <span class="material-symbols-outlined text-[18px]">psychology</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-on-surface">ELC 07 Oral Assessment Diagnostic</h3>
+              <p class="text-[11px] text-on-surface-variant">Koç ELC Intermediate Rubric</p>
+            </div>
+          </div>
+          <span id="evalOverallScore" class="text-xs font-bold bg-secondary/15 text-secondary px-3 py-1 rounded-full font-mono">
+            85/100 (B2+)
+          </span>
+        </div>
+
+        <p id="evalSummary" class="text-xs text-on-surface leading-relaxed italic bg-surface-container-lowest/60 p-2.5 rounded-xl">
+          Loading evaluation summary...
+        </p>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 gap-2" id="evalMetricsGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Strengths & Improvements -->
+        <div class="space-y-2 text-xs">
+          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <span class="font-bold text-emerald-400 block mb-1">✅ Strengths:</span>
+            <ul id="evalStrengthsList" class="list-disc list-inside space-y-0.5 text-on-surface"></ul>
+          </div>
+          <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <span class="font-bold text-amber-400 block mb-1">💡 Areas for Improvement:</span>
+            <ul id="evalImprovementsList" class="list-disc list-inside space-y-0.5 text-on-surface"></ul>
+          </div>
+        </div>
+
+        <!-- High-Score Model Response -->
+        <div class="space-y-1.5 p-3 rounded-xl bg-surface-container-lowest/80 border border-white/5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-secondary flex items-center gap-1">
+              <span class="material-symbols-outlined text-[15px]">school</span>
+              <span>Model B2+ Response Script</span>
+            </span>
+            <button id="modelListenBtn" onclick="toggleModelAudio()" class="text-[11px] flex items-center gap-1 text-primary hover:underline font-semibold">
+              <span class="material-symbols-outlined text-[14px]" id="modelListenIcon">volume_up</span>
+              <span id="modelListenLabel">Listen</span>
+            </button>
+          </div>
+          <p id="evalModelResponse" class="text-xs text-on-surface-variant leading-relaxed">
+            Model script will appear here...
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: AI QUIZ GENERATOR & TESTS ==================== -->
+    <div id="tabContentTests" class="hidden flex-col space-y-4">
+      
+      <!-- Welcome & Quiz Creator Trigger Card -->
+      <div id="quizStarterCard" class="flex flex-col bg-surface-container/80 backdrop-blur-2xl rounded-2xl p-6 shadow-xl border border-white/5 text-center space-y-4 items-center">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-container via-primary to-primary-container/60 flex items-center justify-center text-white shadow-lg">
+          <span class="material-symbols-outlined text-[32px]">quiz</span>
+        </div>
+        <div class="space-y-1.5 max-w-md">
+          <h2 class="text-base sm:text-lg font-bold text-on-surface">ELC Intermediate AI Quiz Generator</h2>
+          <p class="text-xs text-on-surface-variant leading-relaxed">
+            Sohbetlerinizde çalıştığınız konuları otomatik tarayarak veya dilediğiniz bir dilbilgisi/kelime konusunu seçerek hemen B2+ deneme quizi oluşturun.
+          </p>
+        </div>
+
+        <button onclick="openCustomQuizModal()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-container via-inverse-primary to-primary-container text-white text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center gap-2">
+          <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+          <span>Quiz Oluştur</span>
+        </button>
+      </div>
+
+      <!-- Live Quiz Session Container (Hidden until quiz is generated) -->
+      <div id="activeQuizWrapper" class="hidden flex-col space-y-4">
+        
+        <!-- Session Header & Progress -->
+        <div class="flex flex-col gap-2.5 bg-surface-container-low/70 backdrop-blur-xl p-3.5 rounded-2xl shadow-md border border-white/5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+              <span class="text-xs font-bold text-on-surface">Skill Building Practice Deck</span>
+            </div>
+            <span id="testQuestionIndex" class="font-mono text-xs text-on-surface-variant">Q 1 / 5</span>
+          </div>
+
+          <!-- Crimson Progress Track -->
+          <div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+            <div id="testProgressBar" class="h-full bg-gradient-to-r from-primary-container via-primary to-primary-container rounded-full transition-all duration-300" style="width: 20%;"></div>
+          </div>
+
+          <!-- Badges Row: Score, Streak, New Quiz Button -->
+          <div class="flex items-center justify-between pt-0.5">
+            <div class="flex items-center gap-2">
+              <span id="testScoreBadge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface">
+                🎯 Score: 0/0 Correct
+              </span>
+              <span id="testStreakBadge" class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-primary-container/20 text-primary-fixed">
+                🔥 Streak: 0
+              </span>
+            </div>
+            <button onclick="openCustomQuizModal()" class="text-xs flex items-center gap-1 px-3 py-1 rounded-full bg-secondary-container/20 text-secondary hover:bg-secondary-container/30 transition-all font-semibold active:scale-95">
+              <span class="material-symbols-outlined text-[15px]">add</span>
+              <span>Yeni Quiz</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Card Container -->
+        <div class="flex flex-col bg-surface-container/70 backdrop-blur-2xl rounded-2xl p-5 shadow-xl border border-white/5 space-y-4 relative overflow-hidden transition-all duration-300" id="quizCard">
+          
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-secondary text-xs font-semibold">
+              <span class="material-symbols-outlined text-[14px]">school</span>
+              <span id="quizCardUnit" class="truncate">ELC Intermediate Skills</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-mono text-[11px] font-bold">B2+ Academic</span>
+          </div>
+
+          <!-- Question Prompt Sentence -->
+          <div class="space-y-1.5">
+            <p id="quizQuestionText" class="text-base font-semibold text-on-surface leading-snug">
+              Question text loading...
+            </p>
+            <span id="quizInstructionText" class="block text-xs text-on-surface-variant">Select the most accurate answer:</span>
+          </div>
+
+          <!-- Options Container (for Multiple Choice) -->
+          <div id="quizOptionsContainer" class="flex flex-col gap-2">
+            <!-- Dynamic Buttons inserted by JS -->
+          </div>
+
+          <!-- Gap Fill Input Container -->
+          <div id="quizGapFillContainer" class="hidden flex-col gap-2">
+            <div class="flex items-center gap-2 bg-surface-container-lowest px-3.5 py-2.5 rounded-xl border border-white/10 shadow-inner">
+              <span class="material-symbols-outlined text-secondary text-[18px]">edit_note</span>
+              <input id="gapFillInput" type="text" placeholder="Type your answer here..." class="bg-transparent text-sm text-on-surface outline-none w-full font-semibold" onkeydown="if(event.key==='Enter') checkGapFillAnswer()"/>
+              <button onclick="checkGapFillAnswer()" class="px-3 py-1 rounded-lg bg-primary-container text-white text-xs font-bold active:scale-95 transition-all">
+                Check
+              </button>
+            </div>
+          </div>
+
+          <!-- In-Depth Explanation Card (Revealed after answering) -->
+          <div id="quizExplanationCard" class="hidden flex-col gap-2 p-3.5 rounded-xl bg-surface-container-lowest/90 border border-white/10 transition-all">
+            <div class="flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[17px] text-secondary">info</span>
+              <span class="text-xs font-bold text-secondary uppercase tracking-wider">Detaylı Akademik Açıklama & Çözüm</span>
+            </div>
+            <p id="quizExplanationText" class="text-xs text-on-surface leading-relaxed">
+              Explanation...
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1 text-[11px]">
+              <div id="quizSynonymsRow" class="flex items-start gap-1.5 bg-surface-container-high/50 p-2 rounded-lg">
+                <span class="font-bold text-secondary shrink-0">Eş Anlamlılar:</span>
+                <span id="quizSynonymsText" class="text-on-surface-variant"></span>
+              </div>
+              <div id="quizCollocationsRow" class="flex items-start gap-1.5 bg-surface-container-high/50 p-2 rounded-lg">
+                <span class="font-bold text-tertiary shrink-0">Kalıp/Edat:</span>
+                <span id="quizCollocationsText" class="text-on-surface-variant"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Question Navigation -->
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+            <button onclick="prevQuestion()" class="flex items-center gap-1 py-2 px-3.5 rounded-xl bg-surface-container-high/70 hover:bg-surface-container-highest text-on-surface text-xs font-semibold active:scale-95 transition-all">
+              <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+              <span>Previous</span>
+            </button>
+            <button onclick="nextQuestion()" class="flex items-center gap-1.5 py-2 px-5 rounded-xl bg-gradient-to-r from-primary-container via-inverse-primary to-primary-container text-white text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all">
+              <span>Next Question</span>
+              <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quiz Final Summary & Diagnostic Card (Shown at test end) -->
+      <div id="quizSummaryCard" class="hidden flex-col bg-surface-container/90 backdrop-blur-2xl rounded-2xl p-6 shadow-2xl border border-white/10 space-y-4">
+        <div class="flex items-center justify-between border-b border-white/5 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[24px]">verified</span>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-on-surface">Test Tamamlandı!</h3>
+              <p class="text-xs text-on-surface-variant">Performans ve Gelişim Analiziniz</p>
+            </div>
+          </div>
+          <span id="finalScoreBadge" class="text-xs font-mono font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300">
+            5/5 Doğru (%100)
+          </span>
+        </div>
+
+        <p id="finalScoreMsg" class="text-xs text-on-surface leading-relaxed">
+          Tebrikler! Testi tamamladınız.
+        </p>
+
+        <!-- Topics to study diagnostic -->
+        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 text-xs">
+          <div class="flex items-center gap-1.5 text-amber-400 font-bold">
+            <span class="material-symbols-outlined text-[18px]">psychology</span>
+            <span>Hangi Konulara Çalışmalısınız? (AI Analizi)</span>
+          </div>
+          <ul id="weakTopicsList" class="list-disc list-inside space-y-1 text-on-surface">
+            <!-- Topics list -->
+          </ul>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button onclick="restartCurrentQuiz()" class="px-4 py-2 rounded-xl bg-surface-container-high text-xs font-semibold text-on-surface hover:bg-surface-bright transition-all">
+            Bu Quizi Tekrar Çöz
+          </button>
+          <button onclick="openCustomQuizModal()" class="px-5 py-2 rounded-xl bg-primary-container text-white text-xs font-bold shadow-md hover:bg-inverse-primary transition-all">
+            Yeni Quiz Başlat
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== FIXED BOTTOM INPUT BAR (Active for Midterm Chat) ==================== -->
+  <div id="floatingInputBar" class="fixed bottom-0 left-0 right-0 z-40 pb-safe pointer-events-none transition-all">
+    <div class="max-w-4xl mx-auto p-3 sm:p-4 flex flex-col items-center">
+      
+      <!-- Attachment Preview Pill -->
+      <div id="attachmentPreview" class="hidden pointer-events-auto mb-2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-highest/90 backdrop-blur-xl border border-white/10 shadow-lg text-xs">
+        <span class="material-symbols-outlined text-[16px] text-secondary">attachment</span>
+        <span id="attachmentName" class="truncate max-w-[200px] font-medium text-on-surface">file.png</span>
+        <button onclick="removeAttachment()" class="w-4 h-4 rounded-full bg-surface-container flex items-center justify-center hover:text-error">
+          <span class="material-symbols-outlined text-[12px]">close</span>
+        </button>
+      </div>
+
+      <!-- Main Input Capsule -->
+      <div class="pointer-events-auto w-full bg-surface-container-high/90 backdrop-blur-2xl rounded-full p-1.5 flex items-center gap-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.6)] border border-white/10 ring-1 ring-white/5">
+        
+        <!-- File / Image Upload Input (Hidden) -->
+        <input type="file" id="fileUploadInput" class="hidden" accept="image/*,.pdf,.txt,.docx" onchange="handleFileUpload(event)"/>
+        
+        <button onclick="document.getElementById('fileUploadInput').click()" title="Attach image or lecture notes" class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all active:scale-95">
+          <span class="material-symbols-outlined text-[19px]">add_photo_alternate</span>
+        </button>
+
+        <!-- Voice Speech-to-Text Button -->
+        <button id="chatMicBtn" onclick="toggleChatVoice()" title="Voice Speech-to-Text" class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-full bg-secondary-container/20 text-secondary hover:bg-secondary-container/30 transition-all active:scale-95 relative">
+          <span class="material-symbols-outlined text-[19px]" id="chatMicIcon">mic</span>
+          <span id="micRecordingRing" class="hidden absolute inset-0 rounded-full border-2 border-secondary animate-ping pointer-events-none"></span>
+        </button>
+
+        <input id="chatPromptInput" type="text" placeholder="Ask ELC 07 AI or upload notes/prompts..." class="flex-1 bg-transparent text-on-surface placeholder:text-on-surface-variant/50 text-xs sm:text-sm outline-none px-2 py-1 font-medium" onkeydown="if(event.key==='Enter' && !event.shiftKey) handleChatSubmit()"/>
+
+        <!-- Dynamic Send / Stop Button -->
+        <button id="chatSendBtn" onclick="handleChatSubmit()" title="Send prompt" class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-container to-[#8B0000] text-white shadow-[0_0_16px_rgba(166,25,46,0.65)] hover:shadow-[0_0_22px_rgba(166,25,46,0.9)] active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[19px]" id="chatSendIcon">arrow_upward</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CUSTOM AI QUIZ GENERATOR ==================== -->
+  <div id="customQuizModal" class="fixed inset-0 z-50 bg-background/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-surface-container/95 border border-white/10 p-5 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-[22px]">auto_awesome</span>
+          <h3 class="text-sm font-bold text-on-surface">Quiz Oluştur</h3>
+        </div>
+        <button onclick="closeCustomQuizModal()" class="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface">
+          <span class="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </div>
+
+      <p class="text-xs text-on-surface-variant">
+        Lütfen quiz oluşturma metodunuzu seçin:
+      </p>
+
+      <!-- Two Mode Tabs: Sohbetten Oluştur vs Manuel -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-surface-container-lowest rounded-xl border border-white/5">
+        <button id="quizModeChatBtn" onclick="selectQuizMode('chat')" class="py-2 rounded-lg text-xs font-bold transition-all bg-primary-container text-white shadow">
+          💬 Sohbetten Oluştur
+        </button>
+        <button id="quizModeManualBtn" onclick="selectQuizMode('manual')" class="py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all">
+          ✏️ Manuel Oluştur
+        </button>
+      </div>
+
+      <!-- Chat Mode Description -->
+      <div id="quizChatModePanel" class="p-3 rounded-xl bg-surface-container-lowest/80 border border-white/5 space-y-1 text-xs">
+        <span class="font-bold text-secondary block">Sohbet Geçmişi Analizi</span>
+        <p class="text-on-surface-variant leading-relaxed">
+          AI, şu ana kadar sorduğunuz soruları, yaptığınız konuşmaları ve aldığınız cevapları inceleyerek tam o konulara odaklanan özel sorular hazırlar.
+        </p>
+      </div>
+
+      <!-- Manual Mode Panel (Input box) -->
+      <div id="quizManualModePanel" class="hidden space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Konu veya Hedef Beceri:</label>
+          <input id="quizTopicInput" type="text" placeholder="Örn: Conditionals, Cause & Effect transitions, Unit 3 Vocab..." class="w-full bg-surface-container-lowest p-2.5 rounded-xl border border-white/10 outline-none text-on-surface font-medium"/>
+        </div>
+      </div>
+
+      <!-- Question Options -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Soru Sayısı:</label>
+          <select id="quizCountSelect" class="w-full bg-surface-container-lowest p-2.5 rounded-xl border border-white/10 outline-none text-on-surface font-medium">
+            <option value="3">3 Soru</option>
+            <option value="5" selected>5 Soru</option>
+            <option value="8">8 Soru</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold text-on-surface mb-1">Soru Tipi:</label>
+          <select id="quizTypeSelect" class="w-full bg-surface-container-lowest p-2.5 rounded-xl border border-white/10 outline-none text-on-surface font-medium">
+            <option value="mixed" selected>Karışık (Test & Boşluk)</option>
+            <option value="multiple_choice">Çoktan Seçmeli</option>
+            <option value="gap_fill">Boşluk Doldurma</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
+        <button onclick="closeCustomQuizModal()" class="px-4 py-2 rounded-xl bg-surface-container-high text-xs font-semibold text-on-surface">İptal</button>
+        <button id="generateQuizSubmitBtn" onclick="submitGenerateQuiz()" class="px-5 py-2 rounded-xl bg-primary-container text-white text-xs font-bold shadow-md hover:bg-inverse-primary active:scale-95 transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+          <span>Quizi Başlat</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: DOSYA CONVERTER (FILE CONVERTER) ==================== -->
+  <div id="fileConverterModal" class="fixed inset-0 z-50 bg-background/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="w-full max-w-lg rounded-2xl bg-surface-container/95 border border-white/10 p-5 sm:p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-primary-container/30 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-[20px]">transform</span>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-on-surface">Profesyonel Dosya Dönüştürücü</h3>
+            <p class="text-[10px] text-on-surface-variant">Word, PDF, Excel, PPTX, JPG, PNG, TXT Dönüşümü</p>
+          </div>
+        </div>
+        <button onclick="closeFileConverterModal()" class="w-7 h-7 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface">
+          <span class="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div id="converterDropZone" class="border-2 border-dashed border-white/15 hover:border-primary/60 rounded-2xl p-6 text-center transition-all cursor-pointer bg-surface-container-lowest/60 flex flex-col items-center justify-center gap-2" onclick="document.getElementById('converterFileInput').click()">
+        <input type="file" id="converterFileInput" class="hidden" onchange="handleConverterFileSelected(event)"/>
+        <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary">
+          <span class="material-symbols-outlined text-[26px]">upload_file</span>
+        </div>
+        <p class="text-xs font-semibold text-on-surface">
+          Dosya seçmek için tıklayın veya buraya sürükleyip bırakın
+        </p>
+        <p class="text-[10px] text-on-surface-variant">
+          Desteklenenler: DOCX, PDF, XLSX, CSV, PPTX, JPG, PNG, WEBP, TXT
+        </p>
+      </div>
+
+      <!-- File Detection Banner (Revealed when file selected) -->
+      <div id="converterFileDetails" class="hidden flex-col gap-3 p-3.5 rounded-xl bg-surface-container-lowest border border-white/10">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 truncate">
+            <span class="material-symbols-outlined text-[18px] text-secondary">description</span>
+            <span id="detectedFileName" class="text-xs font-bold text-on-surface truncate">document.docx</span>
+          </div>
+          <span id="detectedFileBadge" class="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary font-mono text-[10px] font-bold">
+            Word (.docx)
+          </span>
+        </div>
+
+        <!-- Target Format Selector -->
+        <div>
+          <label class="block text-xs font-semibold text-on-surface-variant mb-1">Dönüştürülecek Formatı Seçin:</label>
+          <select id="converterTargetFormatSelect" class="w-full bg-surface-container-high text-xs text-on-surface p-2.5 rounded-xl border border-white/10 outline-none font-medium">
+            <option value="pdf">PDF Belgesi (.pdf)</option>
+            <option value="docx">Word Belgesi (.docx)</option>
+            <option value="txt">Düz Metin (.txt)</option>
+            <option value="html">Web Sayfası (.html)</option>
+            <option value="xlsx">Excel Tablosu (.xlsx)</option>
+            <option value="csv">CSV Verisi (.csv)</option>
+            <option value="png">PNG Görsel (.png)</option>
+            <option value="jpg">JPG Görsel (.jpg)</option>
+            <option value="webp">WebP Görsel (.webp)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Conversion Progress & Success State -->
+      <div id="converterResultBox" class="hidden flex-col gap-2 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+        <div class="flex items-center gap-2 text-emerald-400 font-bold">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span>Dönüştürme Başarıyla Tamamlandı!</span>
+        </div>
+        <p class="text-on-surface text-[11px]" id="converterSuccessDetail">
+          Dosyanız hazırlandı.
+        </p>
+        <button id="converterDownloadBtn" class="mt-1 w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          <span id="converterDownloadBtnLabel">Dönüştürülen Dosyayı İndir</span>
+        </button>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-white/5">
+        <button onclick="closeFileConverterModal()" class="px-4 py-2 rounded-xl bg-surface-container-high text-xs font-semibold text-on-surface">Kapat</button>
+        <button id="startConvertBtn" onclick="startFileConversion()" class="px-5 py-2 rounded-xl bg-primary-container hover:bg-inverse-primary text-white text-xs font-bold shadow-md active:scale-95 transition-all disabled:opacity-50 flex items-center gap-1.5" disabled>
+          <span class="material-symbols-outlined text-[16px]">sync</span>
+          <span id="startConvertBtnText">Dönüştür</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN PRINT CONTAINER FOR PDF GENERATION -->
+  <div id="pdfExportContainer" class="hidden p-6 bg-white text-black font-sans space-y-4 max-w-[800px] mx-auto">
+    <!-- Populated during PDF generation with page-fit styling -->
+  </div>
+
+  <!-- App Script -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
