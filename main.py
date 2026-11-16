@@ -132,7 +132,98 @@ def sanitize_gemini_contents(raw_contents: list) -> list:
     return cleaned
 
 
+# ============================================================
+# GEMINI 2.5 FLASH / DYNAMIC MODEL RESOLVER & ROBUST FALLBACK
+# ============================================================
+WORKING_MODEL_CONFIG = None  # Tuple of (api_version, model_name)
+AVAILABLE_MODELS_CACHE = []  # Discovered models supporting generateContent
+
+def discover_available_gemini_models(api_key: str):
+    """
+    Dynamically queries Google Gen AI ModelService.ListModels across v1beta and v1.
+    Finds exact model identifiers authorized for this API key.
+    """
+    global AVAILABLE_MODELS_CACHE
+    if AVAILABLE_MODELS_CACHE:
+        return AVAILABLE_MODELS_CACHE
+
+    discovered = []
+    for api_version in ["v1beta", "v1"]:
+        try:
+            url = f"https://generativelanguage.googleapis.com/{api_version}/models?key={api_key}"
+            resp = requests.get(url, timeout=6)
+            if resp.status_code == 200:
+                data = resp.json()
+                for m in data.get("models", []):
+                    name = m.get("name", "")  # e.g. "models/gemini-1.5-flash"
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods:
+                        clean_name = name.replace("models/", "")
+                        discovered.append((api_version, clean_name))
+        except Exception as e:
+            print(f"[Gemini Discovery] {api_version} notice: {e}", flush=True)
+
+    def sort_priority(item):
+        ver, mod = item
+        mod_low = mod.lower()
+        if "2.5-flash" in mod_low:
+            return 0
+        if "2.0-flash" in mod_low:
+            return 1
+        if "1.5-flash" in mod_low:
+            return 2
+        if "flash" in mod_low:
+            return 3
+        if "pro" in mod_low:
+            return 4
+        return 5
+
+    discovered.sort(key=sort_priority)
+    if discovered:
+        print(f"[Gemini Discovery] Discovered {len(discovered)} valid models. Top: {discovered[:4]}", flush=True)
+        AVAILABLE_MODELS_CACHE = discovered
+    return discovered
+
+
+def get_candidate_models(api_key: str):
+    """Returns an ordered list of (api_version, model_name) tuples to try."""
+    global WORKING_MODEL_CONFIG
+    candidates = []
+
+    # If we already have a working configuration, try it first
+    if WORKING_MODEL_CONFIG:
+        candidates.append(WORKING_MODEL_CONFIG)
+
+    # Add discovered models
+    discovered = discover_available_gemini_models(api_key)
+    for item in discovered:
+        if item not in candidates:
+            candidates.append(item)
+
+    # Comprehensive fallback list covering both v1 and v1beta endpoints
+    standard_fallbacks = [
+        ("v1beta", "gemini-2.5-flash"),
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-2.0-flash-exp"),
+        ("v1", "gemini-1.5-flash"),
+        ("v1beta", "gemini-1.5-flash"),
+        ("v1", "gemini-1.5-flash-latest"),
+        ("v1beta", "gemini-1.5-flash-latest"),
+        ("v1", "gemini-1.5-flash-8b"),
+        ("v1beta", "gemini-1.5-flash-8b"),
+        ("v1", "gemini-1.5-pro"),
+        ("v1beta", "gemini-1.5-pro"),
+        ("v1", "gemini-pro"),
+    ]
+    for cand in standard_fallbacks:
+        if cand not in candidates:
+            candidates.append(cand)
+
+    return candidates
+
+
 def call_gemini(contents: list, system_instruction: str = SYSTEM_PROMPT) -> str:
+    global WORKING_MODEL_CONFIG
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
         return (
@@ -141,16 +232,15 @@ def call_gemini(contents: list, system_instruction: str = SYSTEM_PROMPT) -> str:
             "Lütfen Render Dashboard > Environment Variables bölümüne gidip `GEMINI_API_KEY` değerinizi ekleyin."
         )
 
-    # Prioritize gemini-2.5-flash as requested
-    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-    last_error = ""
-
     valid_contents = sanitize_gemini_contents(contents)
     if not valid_contents:
         return "İçerik tespit edilemedi. Lütfen sorunuzu veya dosyanızı tekrar gönderin."
 
-    for model in models:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    candidates = get_candidate_models(api_key)
+    last_error = ""
+
+    for api_version, model in candidates:
+        url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
         payload = {
             "contents": valid_contents,
             "systemInstruction": {
@@ -163,24 +253,30 @@ def call_gemini(contents: list, system_instruction: str = SYSTEM_PROMPT) -> str:
             }
         }
         try:
-            print(f"[ELC AI] Requesting {model} with {len(valid_contents)} turns...")
+            print(f"[ELC AI] Requesting {api_version}/{model} with {len(valid_contents)} turns...", flush=True)
             resp = requests.post(url, json=payload, timeout=60)
             if resp.status_code == 200:
                 data = resp.json()
-                candidates = data.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
+                cand_list = data.get("candidates", [])
+                if cand_list:
+                    parts = cand_list[0].get("content", {}).get("parts", [])
                     reply = "".join([p.get("text", "") for p in parts if "text" in p])
                     if reply.strip():
-                        print(f"[ELC AI] {model} responded successfully ({len(reply)} chars).")
+                        print(f"[ELC AI] {api_version}/{model} responded successfully ({len(reply)} chars).", flush=True)
+                        WORKING_MODEL_CONFIG = (api_version, model)
                         return reply
-                print(f"[ELC AI] {model} returned candidate with no text parts.")
+                print(f"[ELC AI] {api_version}/{model} returned candidate with no text parts.", flush=True)
             else:
-                print(f"[ELC AI] {model} error {resp.status_code}: {resp.text[:200]}")
-                last_error = f"Status {resp.status_code}: {resp.text[:300]}"
+                print(f"[ELC AI] {api_version}/{model} error {resp.status_code}: {resp.text[:200]}", flush=True)
+                last_error = f"{api_version}/{model} (Status {resp.status_code}): {resp.text[:200]}"
+                # If cached working model broke, clear it so fallbacks execute
+                if WORKING_MODEL_CONFIG == (api_version, model):
+                    WORKING_MODEL_CONFIG = None
         except Exception as e:
-            print(f"[ELC AI] {model} exception: {str(e)}")
+            print(f"[ELC AI] {api_version}/{model} exception: {str(e)}", flush=True)
             last_error = str(e)
+            if WORKING_MODEL_CONFIG == (api_version, model):
+                WORKING_MODEL_CONFIG = None
 
     return f"AI servisiyle bağlantı kurulamadı ({last_error}). Lütfen tekrar deneyiniz."
 

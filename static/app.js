@@ -27,6 +27,7 @@ const state = {
   testStreak: 0,
   answeredQuestions: {}, // questionId -> { answered: true, isCorrect: boolean, selected: any }
   quizMode: 'chat', // 'chat' or 'manual'
+  quizSelectedChatId: null, // Selected session ID for chat-based quiz
   wrongQuestions: [], // [{ question, topic, explanation }]
 
   // File Converter
@@ -354,6 +355,9 @@ function deleteChatSession(sessionId) {
     createNewChatSession(false);
   } else if (state.activeChatId === sessionId) {
     state.activeChatId = state.chatSessions[0].id;
+  }
+  if (state.quizSelectedChatId === sessionId) {
+    state.quizSelectedChatId = state.activeChatId;
   }
   saveChatSessionsToStorage();
   renderChatMessages();
@@ -1600,6 +1604,7 @@ function selectQuizMode(mode) {
     manualBtn.className = 'py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all';
     chatPanel.classList.remove('hidden');
     manualPanel.classList.add('hidden');
+    renderQuizChatSelector();
   } else {
     manualBtn.className = 'py-2 rounded-lg text-xs font-bold transition-all bg-primary-container text-white shadow';
     chatBtn.className = 'py-2 rounded-lg text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all';
@@ -1608,11 +1613,65 @@ function selectQuizMode(mode) {
   }
 }
 
+function renderQuizChatSelector() {
+  const container = document.getElementById('quizChatSessionList');
+  const countBadge = document.getElementById('quizChatCountBadge');
+  if (!container) return;
+
+  const sessions = state.chatSessions || [];
+  if (countBadge) {
+    countBadge.textContent = `${sessions.length} Sohbet`;
+  }
+
+  if (sessions.length === 0) {
+    container.innerHTML = `
+      <div class="p-3 rounded-xl bg-surface-container-lowest text-center text-on-surface-variant text-xs space-y-1">
+        <span class="material-symbols-outlined text-[24px] opacity-40">history_edu</span>
+        <p class="font-medium">Henüz kayıtlı bir sohbetiniz bulunmuyor.</p>
+        <p class="text-[10px] text-on-surface-variant/70">"Midterm" sekmesinde soru sorabilir veya "✏️ Manuel Oluştur" seçeneğini kullanabilirsiniz.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (!state.quizSelectedChatId || !sessions.some(s => s.id === state.quizSelectedChatId)) {
+    state.quizSelectedChatId = state.activeChatId || sessions[0].id;
+  }
+
+  container.innerHTML = sessions.map(s => {
+    const isSelected = s.id === state.quizSelectedChatId;
+    const msgCount = (s.messages || []).length;
+    const timeStr = s.createdAt ? new Date(s.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const dateStr = s.createdAt ? new Date(s.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short' }) : '';
+
+    return `
+      <div onclick="selectQuizChatSession('${s.id}')" class="p-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-between border ${isSelected ? 'bg-primary-container/20 border-primary/50 ring-1 ring-primary/40 text-white shadow-sm' : 'bg-surface-container-lowest hover:bg-surface-container-high border-white/5 text-on-surface'}">
+        <div class="flex items-center gap-2.5 overflow-hidden">
+          <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-primary-container text-white' : 'bg-surface-container-high text-on-surface-variant'}">
+            <span class="material-symbols-outlined text-[16px]">${isSelected ? 'check_circle' : 'chat'}</span>
+          </div>
+          <div class="truncate text-xs font-semibold">
+            <span class="truncate block text-on-surface">${escapeHtml(s.title || 'Adsız Sohbet')}</span>
+            <span class="text-[10px] text-on-surface-variant font-normal block">${msgCount} mesaj • ${dateStr} ${timeStr}</span>
+          </div>
+        </div>
+        ${isSelected ? '<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary-container text-white shrink-0">Seçildi</span>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function selectQuizChatSession(sessionId) {
+  state.quizSelectedChatId = sessionId;
+  renderQuizChatSelector();
+}
+
 function openCustomQuizModal() {
   const modal = document.getElementById('customQuizModal');
   if (modal) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    renderQuizChatSelector();
   }
 }
 
@@ -1635,12 +1694,16 @@ async function submitGenerateQuiz() {
   let chatHistoryPayload = [];
 
   if (state.quizMode === 'chat') {
-    const session = getActiveChat();
+    let session = (state.chatSessions || []).find(s => s.id === state.quizSelectedChatId);
+    if (!session) {
+      session = getActiveChat();
+    }
     if (!session || !session.messages || session.messages.length === 0) {
-      alert('Henüz bir çalışma sohbetiniz bulunmuyor!\nLütfen önce "Midterm Prep" sekmesinde soru sorun veya "Manuel Oluştur" seçeneğini kullanın.');
+      alert('Seçilen sohbette henüz mesaj bulunmuyor!\nLütfen mesaj içeren bir sohbet seçin veya "Manuel Oluştur" seçeneğini kullanın.');
       return;
     }
     chatHistoryPayload = session.messages.map(m => ({ role: m.role, content: m.content }));
+    topic = session.title || 'ELC Intermediate Chat Topic';
   } else {
     const topicInput = document.getElementById('quizTopicInput');
     topic = (topicInput ? topicInput.value.trim() : '') || 'ELC Intermediate Midterm Skills';

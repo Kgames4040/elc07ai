@@ -209,29 +209,29 @@
       </div>
 
       <!-- Navigation Tabs (5 Interactive Modules) -->
-      <nav class="h-10 flex items-center justify-between p-1 bg-surface-container-lowest/90 rounded-xl ring-1 ring-white/5 overflow-x-auto no-scrollbar gap-1">
-        <button id="navTabMidterm" onclick="switchTab('midterm')" class="flex-1 min-w-[70px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-bold gap-1 bg-surface-container-high text-on-surface shadow-[0_2px_12px_rgba(166,25,46,0.35)] ring-1 ring-primary/40 whitespace-nowrap px-2">
-          <span class="material-symbols-outlined text-[15px] text-primary">edit_note</span>
+      <nav class="h-9 sm:h-10 flex items-center justify-between gap-1 sm:gap-1.5 p-1 bg-surface-container-lowest/90 rounded-xl ring-1 ring-white/5 overflow-x-auto no-scrollbar">
+        <button id="navTabMidterm" onclick="switchTab('midterm')" class="shrink-0 flex-1 min-w-fit flex items-center justify-center h-full rounded-lg transition-all text-[10px] sm:text-xs font-bold gap-1 sm:gap-1.5 bg-surface-container-high text-on-surface shadow-[0_2px_12px_rgba(166,25,46,0.35)] ring-1 ring-primary/40 whitespace-nowrap px-1.5 sm:px-2.5">
+          <span class="material-symbols-outlined text-[13px] sm:text-[15px] text-primary">edit_note</span>
           <span>Midterm</span>
         </button>
 
-        <button id="navTabSentence" onclick="switchTab('sentence')" class="flex-1 min-w-[75px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
-          <span class="material-symbols-outlined text-[15px] text-amber-400">auto_fix_high</span>
+        <button id="navTabSentence" onclick="switchTab('sentence')" class="shrink-0 flex-1 min-w-fit flex items-center justify-center h-full rounded-lg transition-all text-[10px] sm:text-xs font-semibold gap-1 sm:gap-1.5 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-1.5 sm:px-2.5">
+          <span class="material-symbols-outlined text-[13px] sm:text-[15px] text-amber-400">auto_fix_high</span>
           <span>Cümle Yükseltici</span>
         </button>
 
-        <button id="navTabCards" onclick="switchTab('cards')" class="flex-1 min-w-[75px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
-          <span class="material-symbols-outlined text-[15px] text-emerald-400">style</span>
+        <button id="navTabCards" onclick="switchTab('cards')" class="shrink-0 flex-1 min-w-fit flex items-center justify-center h-full rounded-lg transition-all text-[10px] sm:text-xs font-semibold gap-1 sm:gap-1.5 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-1.5 sm:px-2.5">
+          <span class="material-symbols-outlined text-[13px] sm:text-[15px] text-emerald-400">style</span>
           <span>Kelime Kartları</span>
         </button>
 
-        <button id="navTabSpeaking" onclick="switchTab('speaking')" class="flex-1 min-w-[70px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
-          <span class="material-symbols-outlined text-[15px] text-secondary">mic</span>
+        <button id="navTabSpeaking" onclick="switchTab('speaking')" class="shrink-0 flex-1 min-w-fit flex items-center justify-center h-full rounded-lg transition-all text-[10px] sm:text-xs font-semibold gap-1 sm:gap-1.5 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-1.5 sm:px-2.5">
+          <span class="material-symbols-outlined text-[13px] sm:text-[15px] text-secondary">mic</span>
           <span>Speaking</span>
         </button>
 
-        <button id="navTabTests" onclick="switchTab('tests')" class="flex-1 min-w-[65px] flex items-center justify-center h-full rounded-lg transition-all text-xs font-semibold gap-1 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-2">
-          <span class="material-symbols-outlined text-[15px] text-tertiary">quiz</span>
+        <button id="navTabTests" onclick="switchTab('tests')" class="shrink-0 flex-1 min-w-fit flex items-center justify-center h-full rounded-lg transition-all text-[10px] sm:text-xs font-semibold gap-1 sm:gap-1.5 text-on-surface-variant hover:text-on-surface whitespace-nowrap px-1.5 sm:px-2.5">
+          <span class="material-symbols-outlined text-[13px] sm:text-[15px] text-tertiary">quiz</span>
           <span>AI Quiz</span>
         </button>
       </nav>
@@ -1108,12 +1108,31 @@
         </button>
       </div>
 
-      <!-- Chat Mode Description -->
-      <div id="quizChatModePanel" class="p-3 rounded-xl bg-surface-container-lowest/80 border border-white/5 space-y-1 text-xs">
-        <span class="font-bold text-secondary block">Sohbet Geçmişi Analizi</span>
-        <p class="text-on-surface-variant leading-relaxed">
-          AI, şu ana kadar sorduğunuz soruları, yaptığınız konuşmaları ve aldığınız cevapları inceleyerek tam o konulara odaklanan özel sorular hazırlar.
-        </p>
+      <!-- Chat Mode Description & Interactive Session Selector -->
+      <div id="quizChatModePanel" class="space-y-2.5 text-xs">
+        <div class="p-3 rounded-xl bg-surface-container-lowest/80 border border-white/5 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-secondary flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-[16px]">forum</span>
+              Sohbet Analizi ile Quiz
+            </span>
+            <span id="quizChatCountBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-medium">0 Sohbet</span>
+          </div>
+          <p class="text-[11px] text-on-surface-variant leading-relaxed">
+            Sol menüdeki gibi üzerinde çalıştığınız bir sohbeti seçin. AI o sohbette tartıştığınız dilbilgisi kurallarını ve kelimeleri analiz ederek hedefe yönelik sorular üretir.
+          </p>
+        </div>
+
+        <!-- Chat Sessions List (Scrollable Cards, like drawer) -->
+        <div class="space-y-1.5">
+          <label class="block font-semibold text-on-surface text-[11px] flex items-center justify-between">
+            <span>Hedef Sohbeti Seçin:</span>
+            <span class="text-[10px] text-primary font-normal">Soru üretilecek sohbet</span>
+          </label>
+          <div id="quizChatSessionList" class="max-h-44 overflow-y-auto space-y-1.5 pr-1 no-scrollbar">
+            <!-- Dynamically populated by renderQuizChatSelector() -->
+          </div>
+        </div>
       </div>
 
       <!-- Manual Mode Panel (Input box) -->
