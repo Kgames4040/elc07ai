@@ -66,6 +66,13 @@ def detect_file_type(filename: str, header_bytes: bytes = b"") -> str:
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     return ext
 
+def clean_xml_text(text: str) -> str:
+    """Sanitizes text for safe ReportLab XML paragraph rendering."""
+    if not text:
+        return ""
+    sanitized = "".join(ch for ch in text if ch in ("\n", "\r", "\t") or ord(ch) >= 32)
+    return sanitized.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
 def convert_file(file_bytes: bytes, original_filename: str, target_format: str) -> Tuple[bytes, str, str]:
     """
     Converts file_bytes of original_filename to target_format.
@@ -139,9 +146,9 @@ def convert_file(file_bytes: bytes, original_filename: str, target_format: str) 
             title_style.fontSize = 18
             title_style.textColor = colors.HexColor("#A6192E")
 
-            story = [Paragraph(f"<b>{base_name}</b>", title_style), Spacer(1, 15)]
+            story = [Paragraph(f"<b>{clean_xml_text(base_name)}</b>", title_style), Spacer(1, 15)]
             for p in paragraphs:
-                safe_text = p.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                safe_text = clean_xml_text(p)
                 story.append(Paragraph(safe_text, normal_style))
                 story.append(Spacer(1, 8))
             doc_pdf.build(story)
@@ -292,11 +299,11 @@ def convert_file(file_bytes: bytes, original_filename: str, target_format: str) 
             out_buf = io.BytesIO()
             doc_pdf = SimpleDocTemplate(out_buf, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
             styles = getSampleStyleSheet()
-            story = [Paragraph(f"<b>{base_name} (Presentation Summary)</b>", styles["Title"]), Spacer(1, 15)]
+            story = [Paragraph(f"<b>{clean_xml_text(base_name)} (Presentation Summary)</b>", styles["Title"]), Spacer(1, 15)]
             for s_num, s_lines in slides_text:
                 story.append(Paragraph(f"<b>Slide {s_num}</b>", styles["Heading2"]))
                 for line in s_lines:
-                    safe = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    safe = clean_xml_text(line)
                     story.append(Paragraph(f"• {safe}", styles["Normal"]))
                 story.append(Spacer(1, 10))
             doc_pdf.build(story)
@@ -328,10 +335,10 @@ def convert_file(file_bytes: bytes, original_filename: str, target_format: str) 
             out_buf = io.BytesIO()
             doc_pdf = SimpleDocTemplate(out_buf, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
             styles = getSampleStyleSheet()
-            story = [Paragraph(f"<b>{base_name}</b>", styles["Title"]), Spacer(1, 15)]
+            story = [Paragraph(f"<b>{clean_xml_text(base_name)}</b>", styles["Title"]), Spacer(1, 15)]
             for line in text_content.splitlines():
                 if line.strip():
-                    safe = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    safe = clean_xml_text(line)
                     story.append(Paragraph(safe, styles["Normal"]))
                     story.append(Spacer(1, 6))
             doc_pdf.build(story)

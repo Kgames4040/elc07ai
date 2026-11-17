@@ -3,6 +3,9 @@ import io
 import json
 import base64
 import requests
+import re
+import time
+import threading
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -133,10 +136,12 @@ def sanitize_gemini_contents(raw_contents: list) -> list:
 
 
 # ============================================================
-# GEMINI 2.5 FLASH / DYNAMIC MODEL RESOLVER & ROBUST FALLBACK
+# GEMINI 2.5 / 2.0 / 1.5 DYNAMIC RESOLVER & HIGH-CONCURRENCY CLIENT
 # ============================================================
 WORKING_MODEL_CONFIG = None  # Tuple of (api_version, model_name)
 AVAILABLE_MODELS_CACHE = []  # Discovered models supporting generateContent
+MODEL_LOCK = threading.Lock()
+MODEL_COOLDOWNS = {}  # (api_version, model) -> cooldown_expiration_timestamp
 
 def discover_available_gemini_models(api_key: str):
     """
@@ -144,8 +149,9 @@ def discover_available_gemini_models(api_key: str):
     Finds exact model identifiers authorized for this API key.
     """
     global AVAILABLE_MODELS_CACHE
-    if AVAILABLE_MODELS_CACHE:
-        return AVAILABLE_MODELS_CACHE
+    with MODEL_LOCK:
+        if AVAILABLE_MODELS_CACHE:
+            return AVAILABLE_MODELS_CACHE
 
     discovered = []
     for api_version in ["v1beta", "v1"]:
@@ -166,9 +172,10 @@ def discover_available_gemini_models(api_key: str):
     def sort_priority(item):
         ver, mod = item
         mod_low = mod.lower()
-        if "2.5-flash" in mod_low:
-            return 0
+        # Fast, low-latency, high-token models first
         if "2.0-flash" in mod_low:
+            return 0
+        if "2.5-flash" in mod_low:
             return 1
         if "1.5-flash" in mod_low:
             return 2
@@ -181,18 +188,23 @@ def discover_available_gemini_models(api_key: str):
     discovered.sort(key=sort_priority)
     if discovered:
         print(f"[Gemini Discovery] Discovered {len(discovered)} valid models. Top: {discovered[:4]}", flush=True)
-        AVAILABLE_MODELS_CACHE = discovered
+        with MODEL_LOCK:
+            AVAILABLE_MODELS_CACHE = discovered
     return discovered
 
 
 def get_candidate_models(api_key: str):
-    """Returns an ordered list of (api_version, model_name) tuples to try."""
+    """Returns an ordered list of (api_version, model_name) tuples to try, filtering active cooldowns."""
     global WORKING_MODEL_CONFIG
     candidates = []
+    now = time.time()
 
-    # If we already have a working configuration, try it first
-    if WORKING_MODEL_CONFIG:
-        candidates.append(WORKING_MODEL_CONFIG)
+    with MODEL_LOCK:
+        active_config = WORKING_MODEL_CONFIG
+
+    # If we already have a working configuration and it's not on cooldown, try it first
+    if active_config and MODEL_COOLDOWNS.get(active_config, 0) < now:
+        candidates.append(active_config)
 
     # Add discovered models
     discovered = discover_available_gemini_models(api_key)
@@ -202,8 +214,8 @@ def get_candidate_models(api_key: str):
 
     # Comprehensive fallback list covering both v1 and v1beta endpoints
     standard_fallbacks = [
-        ("v1beta", "gemini-2.5-flash"),
         ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-2.5-flash"),
         ("v1beta", "gemini-2.0-flash-exp"),
         ("v1", "gemini-1.5-flash"),
         ("v1beta", "gemini-1.5-flash"),
@@ -219,10 +231,84 @@ def get_candidate_models(api_key: str):
         if cand not in candidates:
             candidates.append(cand)
 
-    return candidates
+    # Filter out models currently in cooldown (e.g. 503 or 429)
+    available = [c for c in candidates if MODEL_COOLDOWNS.get(c, 0) < now]
+    # If all models are cooled down, return candidates anyway so we don't hard-fail
+    return available if available else candidates
 
 
-def call_gemini(contents: list, system_instruction: str = SYSTEM_PROMPT) -> str:
+def parse_json_safely(raw_text: str):
+    """
+    Robust JSON parser that removes Markdown fences, cleans stray characters,
+    and repairs incomplete arrays/objects when models get truncated.
+    """
+    if not raw_text or not raw_text.strip():
+        return None
+
+    clean = raw_text.strip()
+    if "```json" in clean:
+        clean = clean.split("```json", 1)[1]
+        if "```" in clean:
+            clean = clean.split("```", 1)[0]
+    elif "```" in clean:
+        clean = clean.split("```", 1)[1]
+        if "```" in clean:
+            clean = clean.split("```", 1)[0]
+    clean = clean.strip()
+
+    # Try direct parse
+    try:
+        return json.loads(clean)
+    except Exception:
+        pass
+
+    # Try extracting array or object with regex
+    import re
+    array_match = re.search(r'\[\s*\{.*\}\s*\]', clean, re.DOTALL)
+    if array_match:
+        try:
+            return json.loads(array_match.group(0))
+        except Exception:
+            pass
+
+    obj_match = re.search(r'\{.*\}', clean, re.DOTALL)
+    if obj_match:
+        try:
+            return json.loads(obj_match.group(0))
+        except Exception:
+            pass
+
+    # Partial array recovery: extract all complete JSON objects from array
+    objects = re.findall(r'(\{[^{}]*?(?:\{[^{}]*?\}[^{}]*?)*\})', clean, re.DOTALL)
+    if objects:
+        valid_items = []
+        for obj_str in objects:
+            try:
+                parsed_item = json.loads(obj_str)
+                if isinstance(parsed_item, dict) and parsed_item:
+                    valid_items.append(parsed_item)
+            except Exception:
+                continue
+        if valid_items:
+            return valid_items
+
+    return None
+
+
+def call_gemini(
+    contents: list,
+    system_instruction: str = SYSTEM_PROMPT,
+    max_output_tokens: int = 8192,
+    temperature: float = 0.6,
+    top_p: float = 0.95,
+    response_mime_type: Optional[str] = None,
+    thinking_budget: Optional[int] = None,
+    auto_continue: bool = True
+) -> str:
+    """
+    Robust Gemini caller with dynamic fallbacks, high token limit (8192+),
+    non-blocking concurrency support, thinking management, and auto-continuation.
+    """
     global WORKING_MODEL_CONFIG
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
@@ -241,42 +327,98 @@ def call_gemini(contents: list, system_instruction: str = SYSTEM_PROMPT) -> str:
 
     for api_version, model in candidates:
         url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
+
+        gen_config = {
+            "temperature": temperature,
+            "topP": top_p,
+            "maxOutputTokens": max_output_tokens
+        }
+        if response_mime_type:
+            gen_config["responseMimeType"] = response_mime_type
+        if thinking_budget is not None and ("2.5" in model.lower() or "thinking" in model.lower()):
+            gen_config["thinkingConfig"] = {"thinkingBudget": thinking_budget}
+
         payload = {
             "contents": valid_contents,
             "systemInstruction": {
                 "parts": [{"text": system_instruction}]
             },
-            "generationConfig": {
-                "temperature": 0.6,
-                "topP": 0.95,
-                "maxOutputTokens": 2048
-            }
+            "generationConfig": gen_config
         }
+
         try:
-            print(f"[ELC AI] Requesting {api_version}/{model} with {len(valid_contents)} turns...", flush=True)
+            print(f"[ELC AI] Requesting {api_version}/{model} (max_tokens: {max_output_tokens}, turns: {len(valid_contents)})...", flush=True)
             resp = requests.post(url, json=payload, timeout=60)
+
+            # Retry without thinkingConfig/responseMimeType if model doesn't support them
+            if resp.status_code == 400 and ("thinkingConfig" in resp.text or "responseMimeType" in resp.text):
+                print(f"[ELC AI] {api_version}/{model} 400 parameter notice, retrying with basic config...", flush=True)
+                payload["generationConfig"] = {
+                    "temperature": temperature,
+                    "topP": top_p,
+                    "maxOutputTokens": max_output_tokens
+                }
+                resp = requests.post(url, json=payload, timeout=60)
+
             if resp.status_code == 200:
                 data = resp.json()
                 cand_list = data.get("candidates", [])
                 if cand_list:
-                    parts = cand_list[0].get("content", {}).get("parts", [])
-                    reply = "".join([p.get("text", "") for p in parts if "text" in p])
+                    cand = cand_list[0]
+                    finish_reason = cand.get("finishReason", "")
+                    parts = cand.get("content", {}).get("parts", [])
+
+                    # Exclude internal chain-of-thought parts so they don't pollute output or eat characters
+                    clean_parts = [p.get("text", "") for p in parts if "text" in p and not p.get("thought", False)]
+                    reply = "".join(clean_parts)
+                    if not reply.strip():
+                        reply = "".join([p.get("text", "") for p in parts if "text" in p])
+
                     if reply.strip():
-                        print(f"[ELC AI] {api_version}/{model} responded successfully ({len(reply)} chars).", flush=True)
-                        WORKING_MODEL_CONFIG = (api_version, model)
+                        print(f"[ELC AI] {api_version}/{model} responded successfully ({len(reply)} chars, finishReason: {finish_reason}).", flush=True)
+                        with MODEL_LOCK:
+                            WORKING_MODEL_CONFIG = (api_version, model)
+
+                        # Seamless auto-continuation if response hit MAX_TOKENS in chat
+                        if finish_reason == "MAX_TOKENS" and auto_continue and len(reply) > 50 and not response_mime_type:
+                            print(f"[ELC AI] Hit MAX_TOKENS limit. Requesting seamless continuation...", flush=True)
+                            cont_contents = list(valid_contents) + [
+                                {"role": "model", "parts": [{"text": reply}]},
+                                {"role": "user", "parts": [{"text": "Lütfen kaldığın yerden cevabına aynen ve kesintisiz devam et. Önceki yazdıklarını kesinlikle tekrarlama."}]}
+                            ]
+                            second_part = call_gemini(
+                                contents=cont_contents,
+                                system_instruction=system_instruction,
+                                max_output_tokens=max_output_tokens,
+                                temperature=temperature,
+                                auto_continue=False
+                            )
+                            if second_part and not second_part.startswith("AI servisiyle bağlantı kurulamadı"):
+                                reply = reply.rstrip() + "\n\n" + second_part.lstrip()
+
                         return reply
+
                 print(f"[ELC AI] {api_version}/{model} returned candidate with no text parts.", flush=True)
+            elif resp.status_code in (429, 503):
+                # Temporary high demand or rate limit: mark cooldown for 60 seconds
+                print(f"[ELC AI] {api_version}/{model} notice {resp.status_code}: {resp.text[:120]} (Cooldowned for 60s)", flush=True)
+                with MODEL_LOCK:
+                    MODEL_COOLDOWNS[(api_version, model)] = time.time() + 60
+                    if WORKING_MODEL_CONFIG == (api_version, model):
+                        WORKING_MODEL_CONFIG = None
+                last_error = f"{api_version}/{model} (Status {resp.status_code})"
             else:
                 print(f"[ELC AI] {api_version}/{model} error {resp.status_code}: {resp.text[:200]}", flush=True)
                 last_error = f"{api_version}/{model} (Status {resp.status_code}): {resp.text[:200]}"
-                # If cached working model broke, clear it so fallbacks execute
-                if WORKING_MODEL_CONFIG == (api_version, model):
-                    WORKING_MODEL_CONFIG = None
+                with MODEL_LOCK:
+                    if WORKING_MODEL_CONFIG == (api_version, model):
+                        WORKING_MODEL_CONFIG = None
         except Exception as e:
             print(f"[ELC AI] {api_version}/{model} exception: {str(e)}", flush=True)
             last_error = str(e)
-            if WORKING_MODEL_CONFIG == (api_version, model):
-                WORKING_MODEL_CONFIG = None
+            with MODEL_LOCK:
+                if WORKING_MODEL_CONFIG == (api_version, model):
+                    WORKING_MODEL_CONFIG = None
 
     return f"AI servisiyle bağlantı kurulamadı ({last_error}). Lütfen tekrar deneyiniz."
 
@@ -415,8 +557,14 @@ def get_tests():
             return json.load(f)
     return []
 
+@app.get("/favicon.ico")
+def get_favicon():
+    if os.path.exists("static/img/koc_int07_logo.jpg"):
+        return FileResponse("static/img/koc_int07_logo.jpg", media_type="image/jpeg")
+    return Response(status_code=204)
+
 @app.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
+def chat_endpoint(req: ChatRequest):
     contents = []
 
     if req.history:
@@ -455,7 +603,7 @@ async def chat_endpoint(req: ChatRequest):
         "parts": current_parts
     })
 
-    reply = call_gemini(contents)
+    reply = call_gemini(contents, max_output_tokens=8192, auto_continue=True)
     return {"reply": reply}
 
 
@@ -517,39 +665,35 @@ Yanıtı KESİNLİKLE aşağıdaki JSON formatında döndür:
 
     raw_response = call_gemini(
         [{"role": "user", "parts": [{"text": upgrade_prompt}]}],
-        system_instruction="You are an expert Koç University ELC Intermediate Writing and Grammar Examiner. Output ONLY valid JSON."
+        system_instruction="You are an expert Koç University ELC Intermediate Writing and Grammar Examiner. Output ONLY valid JSON.",
+        max_output_tokens=4096,
+        response_mime_type="application/json",
+        thinking_budget=0
     )
 
-    clean_json = raw_response.strip()
-    if clean_json.startswith("```"):
-        clean_json = clean_json.split("\n", 1)[1]
-    if clean_json.endswith("```"):
-        clean_json = clean_json.rsplit("\n", 1)[0]
-    clean_json = clean_json.strip()
-
-    try:
-        parsed = json.loads(clean_json)
+    parsed = parse_json_safely(raw_response)
+    if isinstance(parsed, dict) and "dilbilgisi_versiyonu" in parsed:
         return parsed
-    except Exception as e:
-        print("[Upgrade Sentence] JSON parse failed, returning fallback:", e)
-        return {
-            "orijinal_cumle": raw_sentence,
-            "dilbilgisi_versiyonu": {
-                "cumle": f"Although many individuals tend to overlook it, {raw_sentence.lower()} **which plays a vital role** in overall academic achievement.",
-                "vurgulanan_yapi": "Adverbial clause of concession + Non-defining relative clause",
-                "turkce_aciklama": "Basit cümleyi zıtlık bağlacı ve niteleyici sıfat cümleciğiyle birleştirerek B2+ seviye karmaşık cümle yapısı kurar."
-            },
-            "kelime_versiyonu": {
-                "cumle": f"Substantial evidence indicates that individuals actively **engage in** {raw_sentence.lower()}, thereby yielding significant long-term benefits.",
-                "hedef_kelimeler": ["substantial evidence", "engage in", "yielding significant benefits"],
-                "turkce_aciklama": "Günlük kelimeler yerine ELC kelime listesindeki akademik eş anlamlılar ve fiil-edat kalıpları tercih edilmiştir."
-            },
-            "konusma_versiyonu": {
-                "cumle": f"From my personal perspective, it is evident that {raw_sentence.lower()}; consequently, this leads to a more favorable outcome.",
-                "anahtar_kalip": "From my personal perspective ... consequently",
-                "turkce_aciklama": "Sözlü sınav hocasının beklediği doğal fikir belirtme ve sebep-sonuç geçiş ifadesi içerir."
-            }
+
+    print("[Upgrade Sentence] JSON parse failed, returning fallback. Raw:", raw_response[:200])
+    return {
+        "orijinal_cumle": raw_sentence,
+        "dilbilgisi_versiyonu": {
+            "cumle": f"Although many individuals tend to overlook it, {raw_sentence.lower()} **which plays a vital role** in overall academic achievement.",
+            "vurgulanan_yapi": "Adverbial clause of concession + Non-defining relative clause",
+            "turkce_aciklama": "Basit cümleyi zıtlık bağlacı ve niteleyici sıfat cümleciğiyle birleştirerek B2+ seviye karmaşık cümle yapısı kurar."
+        },
+        "kelime_versiyonu": {
+            "cumle": f"Substantial evidence indicates that individuals actively **engage in** {raw_sentence.lower()}, thereby yielding significant long-term benefits.",
+            "hedef_kelimeler": ["substantial evidence", "engage in", "yielding significant benefits"],
+            "turkce_aciklama": "Günlük kelimeler yerine ELC kelime listesindeki akademik eş anlamlılar ve fiil-edat kalıpları tercih edilmiştir."
+        },
+        "konusma_versiyonu": {
+            "cumle": f"From my personal perspective, it is evident that {raw_sentence.lower()}; consequently, this leads to a more favorable outcome.",
+            "anahtar_kalip": "From my personal perspective ... consequently",
+            "turkce_aciklama": "Sözlü sınav hocasının beklediği doğal fikir belirtme ve sebep-sonuç geçiş ifadesi içerir."
         }
+    }
 
 
 # ============================================================
@@ -621,22 +765,18 @@ SADECE JSON dizisi üret.
 
     raw_response = call_gemini(
         [{"role": "user", "parts": [{"text": gen_prompt}]}],
-        system_instruction="You are an expert ELC Lexical Syllabus Designer. Output ONLY raw JSON array."
+        system_instruction="You are an expert ELC Lexical Syllabus Designer. Output ONLY raw JSON array.",
+        max_output_tokens=8192,
+        response_mime_type="application/json",
+        thinking_budget=0
     )
 
-    clean_json = raw_response.strip()
-    if clean_json.startswith("```"):
-        clean_json = clean_json.split("\n", 1)[1]
-    if clean_json.endswith("```"):
-        clean_json = clean_json.rsplit("\n", 1)[0]
-    clean_json = clean_json.strip()
+    cards = parse_json_safely(raw_response)
+    if isinstance(cards, list) and len(cards) > 0:
+        print(f"[Flashcards] Successfully generated and parsed {len(cards)} flashcards.", flush=True)
+        return {"cards": cards}
 
-    try:
-        cards = json.loads(clean_json)
-        if isinstance(cards, list) and len(cards) > 0:
-            return {"cards": cards}
-    except Exception as e:
-        print("[Flashcards] JSON parse error:", e)
+    print("[Flashcards] JSON parse error or empty cards, returning fallback. Raw:", raw_response[:200], flush=True)
 
     # Fallback to rich pre-curated cards from academic_wordlist
     fallback_cards = [
@@ -757,33 +897,33 @@ Return your evaluation in clear, motivating, and highly structured JSON format w
 }}
 Return ONLY valid JSON.
 """
-    raw_response = call_gemini([{"role": "user", "parts": [{"text": eval_prompt}]}], system_instruction="You are an expert ELC Oral Examiner. Output ONLY raw JSON.")
-    
-    clean_json = raw_response.strip()
-    if clean_json.startswith("```"):
-        clean_json = clean_json.split("\n", 1)[1]
-    if clean_json.endswith("```"):
-        clean_json = clean_json.rsplit("\n", 1)[0]
-    clean_json = clean_json.strip()
+    raw_response = call_gemini(
+        [{"role": "user", "parts": [{"text": eval_prompt}]}],
+        system_instruction="You are an expert ELC Oral Examiner. Output ONLY raw JSON.",
+        max_output_tokens=4096,
+        response_mime_type="application/json",
+        thinking_budget=0
+    )
 
-    try:
-        parsed = json.loads(clean_json)
+    parsed = parse_json_safely(raw_response)
+    if isinstance(parsed, dict) and "overall_score" in parsed:
         return parsed
-    except Exception:
-        return {
-            "overall_score": 85,
-            "cefr_band": "B2+",
-            "summary": "Solid academic oral delivery with clear communicative purpose.",
-            "metrics": {
-                "fluency": {"score": 85, "comment": "Good use of transition devices and steady delivery."},
-                "lexical_resource": {"score": 84, "comment": "Accurate vocabulary with opportunity for more academic collocations."},
-                "grammar_accuracy": {"score": 83, "comment": "Sound grammatical structure with minor preposition slips."},
-                "task_fulfillment": {"score": 88, "comment": "Addressed key points of the prompt effectively."}
-            },
-            "strengths": ["Directly addressed prompt questions", "Maintained intelligible flow and clear signposts"],
-            "improvements": ["Incorporate more formal hedging expressions (e.g., 'could arguably be considered')", "Expand on secondary justifications"],
-            "model_response": raw_response
-        }
+
+    print("[Speaking Eval] JSON parse notice, returning structured fallback. Raw:", raw_response[:200], flush=True)
+    return {
+        "overall_score": 85,
+        "cefr_band": "B2+",
+        "summary": "Solid academic oral delivery with clear communicative purpose.",
+        "metrics": {
+            "fluency": {"score": 85, "comment": "Good use of transition devices and steady delivery."},
+            "lexical_resource": {"score": 84, "comment": "Accurate vocabulary with opportunity for more academic collocations."},
+            "grammar_accuracy": {"score": 83, "comment": "Sound grammatical structure with minor preposition slips."},
+            "task_fulfillment": {"score": 88, "comment": "Addressed key points of the prompt effectively."}
+        },
+        "strengths": ["Directly addressed prompt questions", "Maintained intelligible flow and clear signposts"],
+        "improvements": ["Incorporate more formal hedging expressions (e.g., 'could arguably be considered')", "Expand on secondary justifications"],
+        "model_response": raw_response
+    }
 
 
 # ============================================================
@@ -852,27 +992,27 @@ Aşağıdaki JSON formatında dizi döndür:
 ]
 SADECE JSON dizisi üret.
 """
-    raw_response = call_gemini([{"role": "user", "parts": [{"text": gen_prompt}]}], system_instruction="You are an expert ELC test maker. Output ONLY valid JSON array.")
-    clean_json = raw_response.strip()
-    if clean_json.startswith("```"):
-        clean_json = clean_json.split("\n", 1)[1]
-    if clean_json.endswith("```"):
-        clean_json = clean_json.rsplit("\n", 1)[0]
-    clean_json = clean_json.strip()
+    raw_response = call_gemini(
+        [{"role": "user", "parts": [{"text": gen_prompt}]}],
+        system_instruction="You are an expert ELC test maker. Output ONLY valid JSON array.",
+        max_output_tokens=8192,
+        response_mime_type="application/json",
+        thinking_budget=0
+    )
 
-    try:
-        questions = json.loads(clean_json)
+    questions = parse_json_safely(raw_response)
+    if isinstance(questions, list) and len(questions) > 0:
         return {"questions": questions}
-    except Exception as e:
-        print("[Quiz Generation] Parse error:", e)
-        return {"error": "Failed to parse generated quiz", "raw": raw_response}
+
+    print("[Quiz Generation] Parse notice or empty, raw:", raw_response[:200], flush=True)
+    return {"error": "Failed to parse generated quiz", "raw": raw_response}
 
 
 # ============================================================
 # FILE CONVERTER ENDPOINT
 # ============================================================
 @app.post("/api/convert-file")
-async def api_convert_file(file: UploadFile = File(...), target_format: str = Form(...)):
+def api_convert_file(file: UploadFile = File(...), target_format: str = Form(...)):
     if not HAS_CONVERTER:
         raise HTTPException(status_code=500, detail="Dosya dönüştürme modülü sunucuda aktif değil.")
 
@@ -880,7 +1020,7 @@ async def api_convert_file(file: UploadFile = File(...), target_format: str = Fo
     print(f"PROMPT: [Dosya Dönüştürücü] '{file.filename}' -> '{target_format}'", flush=True)
 
     try:
-        content = await file.read()
+        content = file.file.read()
         converted_bytes, out_filename, mime = converter.convert_file(content, file.filename, target_format)
         
         return Response(

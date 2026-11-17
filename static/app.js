@@ -396,7 +396,16 @@ function renderChatMessages() {
 
   container.innerHTML = session.messages.map((m, idx) => {
     const isUser = m.role === 'user';
-    const parsedHtml = isUser ? escapeHtml(m.content) : marked.parse(m.content || '');
+    let parsedHtml = '';
+    if (isUser) {
+      parsedHtml = escapeHtml(m.content);
+    } else {
+      try {
+        parsedHtml = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(m.content || '') : escapeHtml(m.content || '');
+      } catch (e) {
+        parsedHtml = escapeHtml(m.content || '');
+      }
+    }
 
     return `
       <div class="flex ${isUser ? 'justify-end' : 'justify-start'} w-full animate-fadeIn">
@@ -528,10 +537,13 @@ async function sendChatMessage() {
   showChatTypingIndicator();
 
   try {
-    const historyPayload = session.messages.slice(0, -1).map(m => ({
-      role: m.role,
-      content: m.content
-    }));
+    const historyPayload = session.messages
+      .slice(0, -1)
+      .filter(m => m.content && !m.content.startsWith('⚠️') && !m.content.startsWith('*(Yanıt'))
+      .map(m => ({
+        role: m.role,
+        content: m.content
+      }));
 
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -615,7 +627,7 @@ function speakMessageText(index) {
 
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[*#`_]/g, '');
+    const cleanText = text.replace(/<[^>]*>/g, '').replace(/[*#`_~]/g, '').trim();
     const utter = new SpeechSynthesisUtterance(cleanText);
     utter.lang = 'en-US';
     utter.rate = 0.95;
@@ -716,14 +728,19 @@ async function handleSentenceUpgrade() {
   }
 }
 
+function formatHighlightedSentence(text, spanClass) {
+  let formatted = escapeHtml(text || '');
+  formatted = formatted.replace(/(\*\*|__)(.*?)\1/g, `<span class="${spanClass}">$2</span>`);
+  formatted = formatted.replace(/&lt;b&gt;(.*?)&lt;\/b&gt;/g, `<span class="${spanClass}">$1</span>`);
+  return formatted;
+}
+
 function renderSentenceUpgradeResults(data) {
   // 1. Grammar Card
   const g = data.dilbilgisi_versiyonu || {};
   const gSentenceEl = document.getElementById('grammarSentenceText');
   if (gSentenceEl) {
-    let formatted = escapeHtml(g.cumle || '');
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<span class="bg-indigo-500/25 text-indigo-300 font-bold px-1.5 py-0.5 rounded ring-1 ring-indigo-500/40">$1</span>');
-    gSentenceEl.innerHTML = formatted;
+    gSentenceEl.innerHTML = formatHighlightedSentence(g.cumle, 'bg-indigo-500/25 text-indigo-300 font-bold px-1.5 py-0.5 rounded ring-1 ring-indigo-500/40');
   }
   document.getElementById('grammarPill').textContent = g.vurgulanan_yapi || 'Hedef Dilbilgisi Yapısı';
   document.getElementById('grammarExplanationText').textContent = g.turkce_aciklama || 'Sınavda daha yüksek dilbilgisi puanı getirir.';
@@ -732,9 +749,7 @@ function renderSentenceUpgradeResults(data) {
   const v = data.kelime_versiyonu || {};
   const vSentenceEl = document.getElementById('vocabSentenceText');
   if (vSentenceEl) {
-    let formatted = escapeHtml(v.cumle || '');
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<span class="bg-emerald-500/25 text-emerald-300 font-bold px-1.5 py-0.5 rounded ring-1 ring-emerald-500/40">$1</span>');
-    vSentenceEl.innerHTML = formatted;
+    vSentenceEl.innerHTML = formatHighlightedSentence(v.cumle, 'bg-emerald-500/25 text-emerald-300 font-bold px-1.5 py-0.5 rounded ring-1 ring-emerald-500/40');
   }
   const pillsContainer = document.getElementById('vocabPills');
   if (pillsContainer) {
@@ -747,9 +762,7 @@ function renderSentenceUpgradeResults(data) {
   const s = data.konusma_versiyonu || {};
   const sSentenceEl = document.getElementById('speakingSentenceText');
   if (sSentenceEl) {
-    let formatted = escapeHtml(s.cumle || '');
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<span class="bg-secondary/25 text-secondary font-bold px-1.5 py-0.5 rounded ring-1 ring-secondary/40">$1</span>');
-    sSentenceEl.innerHTML = formatted;
+    sSentenceEl.innerHTML = formatHighlightedSentence(s.cumle, 'bg-secondary/25 text-secondary font-bold px-1.5 py-0.5 rounded ring-1 ring-secondary/40');
   }
   document.getElementById('speakingPill').textContent = s.anahtar_kalip || 'Doğal Geçiş Kalıbı';
   document.getElementById('speakingExplanationText').textContent = s.turkce_aciklama || 'Speaking sınavında akıcılık ve doğallık sağlar.';
@@ -848,7 +861,11 @@ function flipFlashcard() {
 }
 
 function renderCurrentFlashcard() {
-  if (!state.flashcards || state.flashcards.length === 0) return;
+  if (!state.flashcards || state.flashcards.length === 0) {
+    const counter = document.getElementById('flashcardCounter');
+    if (counter) counter.textContent = '0 / 0';
+    return;
+  }
   if (state.currentCardIndex >= state.flashcards.length) {
     state.currentCardIndex = 0;
   }
@@ -982,6 +999,13 @@ function toggleCustomTextInput() {
 async function generateFlashcardsFromCurriculum() {
   const unitSelect = document.getElementById('flashcardUnitSelect');
   const unit = unitSelect ? unitSelect.value : '';
+  const btn = document.getElementById('genCurriculumCardsBtn');
+  const origHtml = btn ? btn.innerHTML : '';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">sync</span><span>Hazırlanıyor...</span>`;
+  }
 
   try {
     const res = await fetch('/api/generate-flashcards', {
@@ -1008,16 +1032,28 @@ async function generateFlashcardsFromCurriculum() {
   } catch (err) {
     console.error('Flashcard error:', err);
     alert('Bağlantı hatası: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
   }
 }
 
 async function generateFlashcardsFromCustomText() {
   const textInput = document.getElementById('customFlashcardText');
   const text = textInput ? textInput.value.trim() : '';
+  const btn = document.getElementById('genCustomCardsBtn');
+  const origHtml = btn ? btn.innerHTML : '';
 
   if (!text) {
     alert('Lütfen kelime çıkarılmasını istediğiniz bir okuma parçası veya kelime listesi yapıştırın.');
     return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">sync</span><span>Üretiliyor...</span>`;
   }
 
   try {
@@ -1047,6 +1083,11 @@ async function generateFlashcardsFromCustomText() {
     }
   } catch (err) {
     alert('Bağlantı hatası: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+    }
   }
 }
 
@@ -1680,6 +1721,40 @@ function closeCustomQuizModal() {
   if (modal) {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
+  }
+}
+
+async function loadCurriculumTests() {
+  try {
+    const res = await fetch('/api/tests');
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        state.tests = data;
+        state.currentQuestionIndex = 0;
+        state.testScore = 0;
+        state.testStreak = 0;
+        state.answeredQuestions = {};
+        state.wrongQuestions = [];
+
+        const starter = document.getElementById('quizStarterCard');
+        const summary = document.getElementById('quizSummaryCard');
+        const wrapper = document.getElementById('activeQuizWrapper');
+
+        if (starter) starter.classList.add('hidden');
+        if (summary) summary.classList.add('hidden');
+        if (wrapper) wrapper.classList.remove('hidden');
+
+        renderCurrentQuestion();
+      } else {
+        alert('Müfredat testleri bulunamadı.');
+      }
+    } else {
+      alert('Müfredat testleri yüklenemedi. Durum: ' + res.status);
+    }
+  } catch (err) {
+    console.error('Curriculum tests error:', err);
+    alert('Müfredat testleri bağlantı hatası: ' + err.message);
   }
 }
 

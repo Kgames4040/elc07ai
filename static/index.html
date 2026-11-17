@@ -534,7 +534,7 @@
           </div>
           
           <div class="flex items-center gap-2">
-            <button onclick="generateFlashcardsFromCurriculum()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md active:scale-95 transition-all flex items-center gap-1.5">
+            <button id="genCurriculumCardsBtn" onclick="generateFlashcardsFromCurriculum()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md active:scale-95 transition-all flex items-center gap-1.5">
               <span class="material-symbols-outlined text-[16px]">sync</span>
               <span>Yüklü Materyalden Üret</span>
             </button>
@@ -564,7 +564,7 @@
           </div>
           <textarea id="customFlashcardText" rows="2" placeholder="Veya buraya çalışmak istediğiniz bir okuma parçası veya kelime listesi yapıştırın..." class="w-full bg-surface-container-lowest p-2.5 rounded-xl border border-white/10 outline-none text-xs text-on-surface font-medium"></textarea>
           <div class="flex justify-end">
-            <button onclick="generateFlashcardsFromCustomText()" class="px-4 py-1.5 rounded-xl bg-primary-container text-white text-xs font-bold active:scale-95 transition-all">
+            <button id="genCustomCardsBtn" onclick="generateFlashcardsFromCustomText()" class="px-4 py-1.5 rounded-xl bg-primary-container text-white text-xs font-bold active:scale-95 transition-all">
               Metinden Kart Üret
             </button>
           </div>
@@ -884,10 +884,16 @@
           </p>
         </div>
 
-        <button onclick="openCustomQuizModal()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-container via-inverse-primary to-primary-container text-white text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center gap-2">
-          <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
-          <span>Quiz Oluştur</span>
-        </button>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button onclick="openCustomQuizModal()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-container via-inverse-primary to-primary-container text-white text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+            <span>Quiz Oluştur</span>
+          </button>
+          <button onclick="loadCurriculumTests()" class="px-5 py-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs sm:text-sm font-semibold border border-white/10 active:scale-95 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] text-emerald-400">menu_book</span>
+            <span>Müfredat Soru Bankası (17 Soru)</span>
+          </button>
+        </div>
       </div>
 
       <!-- Live Quiz Session Container (Hidden until quiz is generated) -->
